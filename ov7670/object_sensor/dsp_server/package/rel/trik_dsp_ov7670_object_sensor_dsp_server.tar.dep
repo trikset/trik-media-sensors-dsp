@@ -1,0 +1,42 @@
+trik_dsp_ov7670_object_sensor_dsp_server.tar: bin/dsp_server.xe674
+bin/dsp_server.xe674:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: config.bld
+config.bld:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: link.cmd
+link.cmd:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: main.c
+main.c:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: makefile
+makefile:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/.vers_b150
+package/.vers_b150:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/.vers_g180
+package/.vers_g180:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/.vers_r170
+package/.vers_r170:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/.xdc-y51
+package/.xdc-y51:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/build.cfg
+package/build.cfg:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/package.bld.xml
+package/package.bld.xml:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/package.defs.h
+package/package.defs.h:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/package_trik.dsp.ov7670.object_sensor.dsp_server.c
+package/package_trik.dsp.ov7670.object_sensor.dsp_server.c:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/trik.dsp.ov7670.object_sensor.dsp_server.ccs
+package/trik.dsp.ov7670.object_sensor.dsp_server.ccs:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/trik.dsp.ov7670.object_sensor.dsp_server.sch
+package/trik.dsp.ov7670.object_sensor.dsp_server.sch:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/trik_dsp_ov7670_object_sensor_dsp_server.class
+package/trik_dsp_ov7670_object_sensor_dsp_server.class:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package/trik_dsp_ov7670_object_sensor_dsp_server.java
+package/trik_dsp_ov7670_object_sensor_dsp_server.java:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package.bld
+package.bld:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package.xdc
+package.xdc:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: package.xs
+package.xs:
+trik_dsp_ov7670_object_sensor_dsp_server.tar: server.cfg
+server.cfg:
