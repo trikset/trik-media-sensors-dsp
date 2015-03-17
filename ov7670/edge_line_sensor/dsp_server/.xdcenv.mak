@@ -1,5 +1,5 @@
 #
-_XDCBUILDCOUNT = 7
+_XDCBUILDCOUNT = 8
 ifneq (,$(findstring path,$(_USEXDCENV_)))
 override XDCPATH = 
 override XDCROOT = /opt/trik-dsp/xdctools_3_24_07_73
@@ -11,6 +11,6 @@ override XDCTARGETS =
 endif
 #
 ifeq (0,1)
-PKGPATH = /opt/trik-dsp/xdctools_3_24_07_73/packages;../../..
+PKGPATH = /opt/trik-dsp/xdctools_3_24_07_73/packages;../../../../..
 HOSTOS = Linux
 endif

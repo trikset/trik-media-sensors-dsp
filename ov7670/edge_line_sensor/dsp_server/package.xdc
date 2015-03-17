@@ -1,2 +1,2 @@
-package trik.vidtranscode_cv.dsp_server [1, 0, 0] {
+package trik.dsp.ov7670.edge_line_sensor.dsp_server [1, 0, 0] {
 }
