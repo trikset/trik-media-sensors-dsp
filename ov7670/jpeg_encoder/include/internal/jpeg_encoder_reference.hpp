@@ -675,10 +675,11 @@ class JPGEncoder
 
   Arr64 YDU, UDU, VDU;
 
+  //don't used for now
   void RGB2YUV(PixIn* img, int xpos, int ypos, int ll)
   {
     int pos=0;
-    for (int y =0; y<8; y++) {
+    for (int y=0; y<8; y++) {
       for (int x=0; x<8; x++) {
         uint32_t P = img[(ypos+y)*ll + xpos+x];
         int R = static_cast<int>((P>>16)&0xFF);
@@ -692,6 +693,7 @@ class JPGEncoder
     }
   }
 
+  //TODO: parse Cb and Cr components correctly
   void getBlock(PixIn* img, int xpos, int ypos, int ll)
   {
     int pos=0;

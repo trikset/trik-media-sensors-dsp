@@ -31,7 +31,6 @@
 } /* **** **** **** **** **** * namespace trik * **** **** **** **** **** */
 
 // include one of implementations
-
 #include "internal/jpeg_encoder_reference.hpp"
 
 #endif // !TRIK_VIDTRANSCODE_CV_INTERNAL_JPEG_ENCODE_HPP_
