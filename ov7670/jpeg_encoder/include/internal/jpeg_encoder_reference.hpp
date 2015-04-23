@@ -699,7 +699,7 @@ class JPGEncoder
     int pos=0;
     for (int y=0; y<8; y++) {
       for (int x=0; x<8; x++) {
-        YDU[pos]=img[(ypos+y)*ll+(xpos+x)];
+        YDU[pos]=img[(ypos+y)*ll+(xpos+x)]-128;
         UDU[pos]=0;
         VDU[pos]=0;
         pos++;
