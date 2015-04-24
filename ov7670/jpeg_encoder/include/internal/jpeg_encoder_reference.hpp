@@ -208,6 +208,9 @@ static double _aasf[8] = {
       1.0, 0.785694958, 0.541196100, 0.275899379
     };
 
+static PixIn s_cb[320*240];
+static PixIn s_cr[320*240];
+
 /**
  * Class that converts BitmapData into a valid JPEG
  */
@@ -694,14 +697,19 @@ class JPGEncoder
   }
 
   //TODO: parse Cb and Cr components correctly
-  void getBlock(PixIn* img, int xpos, int ypos, int ll)
+  void getBlock(PixIn* img, int xpos, int ypos, int width)
   {
+  
+
+    PixIn* restrict cb   = s_cb;
+    PixIn* restrict cr   = s_cr;
     int pos=0;
     for (int y=0; y<8; y++) {
+      #pragma MUST_ITERATE(8, ,8)
       for (int x=0; x<8; x++) {
-        YDU[pos]=img[(ypos+y)*ll+(xpos+x)]-128;
-        UDU[pos]=0;
-        VDU[pos]=0;
+        YDU[pos]=img[(ypos+y)*width+(xpos+x)]-128;
+        UDU[pos]=cr[((ypos+y)*width+(xpos+x))/2]-128;
+        VDU[pos]=cb[((ypos+y)*width+(xpos+x))/2]-128;
         pos++;
       }
     }
@@ -769,6 +777,19 @@ class JPGEncoder
     writeSOF0(width, height);
     writeDHT();
     writeSOS();
+
+
+
+    const uint16_t *UV = reinterpret_cast<const uint16_t*>(image + width*height);
+    PixIn* restrict cb_   = s_cb;
+    PixIn* restrict cr_   = s_cr;
+
+    #pragma MUST_ITERATE(8, ,8)
+    for(int i = 0; i < width*height ; i++) {
+        *(cb_++) = static_cast<PixIn>(*UV);
+        *(cr_++) = static_cast<PixIn>((*UV) >> 8);
+        UV++;
+    }
 
      // Encode 8x8 macroblocks
     int DCY=0;
