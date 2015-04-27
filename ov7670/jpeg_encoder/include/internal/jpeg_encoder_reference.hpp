@@ -80,6 +80,7 @@ JPEG encoder ported to C++ and optimized by Jake and Dmitry, www.trikset.com, 03
 Basic GUI blocking jpeg encoder
 */
 #include <map>
+//#define double float
 
 /* **** **** **** **** **** */ namespace trik /* **** **** **** **** **** */ {
 
@@ -207,9 +208,6 @@ static double _aasf[8] = {
       1.0, 1.387039845, 1.306562965, 1.175875602,
       1.0, 0.785694958, 0.541196100, 0.275899379
     };
-
-static PixIn s_cb[320*240];
-static PixIn s_cr[320*240];
 
 /**
  * Class that converts BitmapData into a valid JPEG
@@ -697,19 +695,20 @@ class JPGEncoder
   }
 
   //TODO: parse Cb and Cr components correctly
-  void getBlock(PixIn* img, int xpos, int ypos, int width)
+  void getBlock(PixIn* img, int xpos, int ypos, int width, int height)
   {
-  
-
-    PixIn* restrict cb   = s_cb;
-    PixIn* restrict cr   = s_cr;
+    const uint16_t *UV = reinterpret_cast<const uint16_t*>(img + width*height);
+    
     int pos=0;
     for (int y=0; y<8; y++) {
+      int y_shift = (ypos+y)*(width);
       #pragma MUST_ITERATE(8, ,8)
       for (int x=0; x<8; x++) {
-        YDU[pos]=img[(ypos+y)*width+(xpos+x)]-128;
-        UDU[pos]=cr[((ypos+y)*width+(xpos+x))/2]-128;
-        VDU[pos]=cb[((ypos+y)*width+(xpos+x))/2]-128;
+        int xy_shift = y_shift + (xpos + x);
+    		uint16_t uv = UV[xy_shift/2];
+        YDU[pos]=img[xy_shift]-128;
+        UDU[pos]=static_cast<PixIn>(uv>>8)-128;
+        VDU[pos]=static_cast<PixIn>(uv)-128;
         pos++;
       }
     }
@@ -778,19 +777,6 @@ class JPGEncoder
     writeDHT();
     writeSOS();
 
-
-
-    const uint16_t *UV = reinterpret_cast<const uint16_t*>(image + width*height);
-    PixIn* restrict cb_   = s_cb;
-    PixIn* restrict cr_   = s_cr;
-
-    #pragma MUST_ITERATE(8, ,8)
-    for(int i = 0; i < width*height ; i++) {
-        *(cb_++) = static_cast<PixIn>(*UV);
-        *(cr_++) = static_cast<PixIn>((*UV) >> 8);
-        UV++;
-    }
-
      // Encode 8x8 macroblocks
     int DCY=0;
     int DCU=0;
@@ -800,7 +786,7 @@ class JPGEncoder
     for (int ypos=0; ypos<height; ypos+=8) {
       for (int xpos=0; xpos<width; xpos+=8) {
         //RGB2YUV(image, xpos, ypos, width);
-        getBlock(image, xpos, ypos, width);
+        getBlock(image, xpos, ypos, width, height);
         DCY = processDU(YDU, fdtbl_Y, DCY, YDC_HT, YAC_HT);
         DCU = processDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
         DCV = processDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
