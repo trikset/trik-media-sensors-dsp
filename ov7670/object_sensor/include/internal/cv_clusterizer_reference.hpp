@@ -154,7 +154,7 @@ class Clusterizer : public CVAlgorithm
     
     uint16_t getSize(int i)
     {
-      return clusters[i].size*METAPIX_SIZE;
+      return clusters[i].size;
     }
     
     virtual bool setup(const TrikCvImageDesc& _inImageDesc, const TrikCvImageDesc& _outImageDesc, int8_t* _fastRam, size_t _fastRamSize)
@@ -190,7 +190,7 @@ class Clusterizer : public CVAlgorithm
 
       for (int srcRow = 0; srcRow < m_inImageDesc.m_height; srcRow++) {
         for (int srcCol = 0; srcCol < m_inImageDesc.m_width; srcCol++) {
-          if(pop(*(srcImgPtr++)) > 8) { //metapix detected if there are more than N pixels
+          if(pop(*(srcImgPtr++)) > METAPIX_SIZE/2) { //metapix detected if there are more than N pixels
             setClusterNum(dstImgPtr, srcRow, srcCol);
           }
 

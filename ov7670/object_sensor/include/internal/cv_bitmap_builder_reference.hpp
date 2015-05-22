@@ -202,7 +202,7 @@ class BitmapBuilder : public CVAlgorithm
         }
       }
       
-      if(detectedPoints > 0) {
+      if(detectedPoints > 32) {
              
         m_detectHueFrom = makeValueWrap (maxHid, -m_detectHueTol, 0, 255);
         m_detectHueTo   = makeValueWrap (maxHid, +m_detectHueTol, 0, 255);
