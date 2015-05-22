@@ -10,6 +10,12 @@
 
 /* **** **** **** **** **** */ namespace trik /* **** **** **** **** **** */ {
 
+#define IMG_WIDTH_MAX 640
+#define IMG_HEIGHT_MAX 480
+
+#define OBJECTS      8
+#define METAPIX_SIZE 4
+#define ENV_PIXS     4
 
 class noncopyable
 {
@@ -43,6 +49,40 @@ inline _T range(_T _min, _T _val, _T _max)
   else return _val;
 }
 
+
+//Counting the number of non-zero bits in uint16_t variable
+inline uint16_t pop(uint16_t x) 
+{
+  x = x - ((x >> 1) & 0x5555);
+  x = (x & 0x3333) + ((x >> 2) & 0x3333);
+  x = (x + (x >> 4)) & 0x0f0f;
+  x = x + (x >> 8);
+  x = x + (x >> 16);
+
+  return x & 0x003f;
+}
+
+inline int makeValueRange(int _val, int _adj, int _min, int _max)
+{
+  _val += _adj;
+  if (_val > _max)
+    return _max;
+  else if (_val < _min)
+    return _min;
+  else
+    return _val;
+}
+
+inline int makeValueWrap(int _val, int _adj, int _min, int _max)
+{
+  _val += _adj;
+  while (_val > _max)
+    _val -= (_max-_min+1);
+  while (_val < _min)
+    _val += (_max-_min+1);
+
+  return _val;
+}
 
 } /* **** **** **** **** **** * namespace trik * **** **** **** **** **** */
 
