@@ -11,7 +11,7 @@
 
 #include "internal/stdcpp.hpp"
 #include "trik_vidtranscode_cv.h"
-
+#define HSV_CORRECTION
 
 /* **** **** **** **** **** */ namespace trik /* **** **** **** **** **** */ {
 
@@ -19,7 +19,6 @@
 
 static uint16_t s_hi2ho[IMG_WIDTH_MAX];
 static uint8_t  s_metapixFillerShifter[IMG_WIDTH_MAX];
-
 
 class BitmapBuilder : public CVAlgorithm
 {
@@ -150,14 +149,12 @@ class BitmapBuilder : public CVAlgorithm
       const uint16_t* restrict p_hi2ho = s_hi2ho;
     
       int64_t detectedPoints = 0;
-
+#ifdef HSV_CORRECTION
       uint32_t midH[256];
       uint32_t midS[256];
-      uint32_t midV[256];
       memset(midH,0,256*sizeof(uint32_t));
       memset(midS,0,256*sizeof(uint32_t));
-      memset(midV,0,256*sizeof(uint32_t));
-      
+#endif
 
 //just detect and build metapixels:
       uint8_t* restrict p_metapixFillerShifter = s_metapixFillerShifter;
@@ -172,14 +169,13 @@ class BitmapBuilder : public CVAlgorithm
         for (TrikCvImageDimension srcCol = 0; srcCol < m_inImageDesc.m_width; srcCol++) {
           pixel.whole = _loll(*(p_inImg++));
           bool det = detectHsvPixel(pixel.whole, u64_hsv_range, u32_hsv_expect);
-
+#ifdef HSV_CORRECTION
           if(det) {
             midH[pixel.parts.h]++;
             midS[pixel.parts.s]++;
-            midV[pixel.parts.v]++;
             detectedPoints++;
           }
-
+#endif
           *p_outImg += det << (metapixFillerShifter + metapixFiller++);
 
           if(metapixFiller == METAPIX_SIZE) {
@@ -188,13 +184,12 @@ class BitmapBuilder : public CVAlgorithm
           }
         }
       }
-      
+
+#ifdef HSV_CORRECTION
       int maxHid=0;
       int maxSid=0;
-      int maxVid=0;
       int maxH=0;
       int maxS=0;
-      int maxV=0;
                 
       for(int i = 0; i < 256; i++) {
         if(midH[i]>=maxH){
@@ -205,25 +200,22 @@ class BitmapBuilder : public CVAlgorithm
           maxSid = i;
           maxS = midS[i];
         }
-        if(midV[i]>=maxV){
-          maxVid = i;
-          maxV = midV[i];
-        }
       }
       
-     
       if(detectedPoints > 0) {
              
         m_detectHueFrom = makeValueWrap (maxHid, -m_detectHueTol, 0, 255);
         m_detectHueTo   = makeValueWrap (maxHid, +m_detectHueTol, 0, 255);
-        /*
         m_detectSatFrom = makeValueRange(maxSid, -m_detectSatTol, 0, 255);
         m_detectSatTo   = makeValueRange(maxSid, +m_detectSatTol, 0, 255);
+        /*
         m_detectValFrom = makeValueRange(maxVid, -m_detectValTol, 0, 255);
         m_detectValTo   = makeValueRange(maxVid, +m_detectValTol, 0, 255);
         */
         resetHsvRange();
       }
+#endif
+
     }
 };
 

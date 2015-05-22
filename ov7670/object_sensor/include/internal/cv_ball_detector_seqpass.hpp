@@ -576,7 +576,7 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
       {
         int size = std::sqrt(static_cast<float>(m_clusterizer.getSize(i)));
         const uint32_t targetRadius = std::ceil(size / 3.1415927f);
-        if(size > 16) { //it's better to be about 1% of image
+        if(size > 8) { //it's better to be about 0.5% of image
           noObjects = false;
           int x = m_clusterizer.getX(i);
           int y = m_clusterizer.getY(i);

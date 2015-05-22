@@ -198,10 +198,8 @@ class HsvRangeDetector
       int v1;
       int v2;
 
-
     //initialize clasters
       memset(s_hsv_clasters, 0, cstrs_max_num*cstrs_max_num*cstrs_max_num*sizeof(int32_t));
-
 
     //initialize variables for claster with highest occurrence
       int h_max_pos = 0;
@@ -321,8 +319,8 @@ class HsvRangeDetector
 
       _s = (s2 + s1) / 2;
       _sTol = (s2 - s1) / 2 + 2;
-      _v = (v1 + v2) / 2;
-      _vTol = (v2 - v1) / 2 + 2;
+      _v = 50;
+      _vTol = 50;
     }
 
 };
