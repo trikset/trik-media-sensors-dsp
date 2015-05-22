@@ -23,17 +23,17 @@
 
 #warning Eliminate global var too
 
-/*
+
 //real clasters params
 static const int cstrs_max_num = 32; // 256/8
 static const int pos_shift = 3; // 8 == 2^3
-*/
 
+/*
 //test clasters params
 static const int cstrs_max_num = 16; // 256/16
 static const int pos_shift = 4; // 16 == 2^4
-
-static int32_t s_hsv_clasters[cstrs_max_num][cstrs_max_num][cstrs_max_num];
+*/
+static int32_t s_hs_clasters[cstrs_max_num][cstrs_max_num];
 
 class HsvRangeDetector
 {
@@ -106,7 +106,7 @@ class HsvRangeDetector
         return res;
     }
 
-    uint64_t m_foo(int h1, int h2, int s1, int s2, int v1, int v2)
+    uint64_t m_foo(int h1, int h2, int s1, int s2)
     {
         int64_t res = 0;
         int32_t val = 0;
@@ -118,14 +118,10 @@ class HsvRangeDetector
             {
                 for(int s_pos = s1; s_pos <= s2; s_pos++)
                 {
-                    for(int v_pos = v1; v_pos <= v2; v_pos++)
-                    {
+                    val = s_hs_clasters[h_pos][s_pos];
+                    res += val != 0 ? val : -K0;
 
-                        val = s_hsv_clasters[h_pos][s_pos][v_pos];
-                        res += val != 0 ? val : -K0;
-
-                        //res += s_hsv_clasters[h_pos][s_pos][v_pos];
-                    }
+                    //res += s_hs_clasters[h_pos][s_pos];
                 }
             }
 
@@ -136,27 +132,19 @@ class HsvRangeDetector
             {
                 for(int s_pos = s1; s_pos <= s2; s_pos++)
                 {
-                    for(int v_pos = v1; v_pos <= v2; v_pos++)
-                    {
+                    val = s_hs_clasters[h_pos][s_pos];
+                    res += val != 0 ? val : -K0;
 
-                        val = s_hsv_clasters[h_pos][s_pos][v_pos];
-                        res += val != 0 ? val : -K0;
-
-                        //res += s_hsv_clasters[h_pos][s_pos][v_pos];
-                    }
+                    //res += s_hs_clasters[h_pos][s_pos];
                 }
             }
             for(int h_pos = 0; h_pos <= h2; h_pos++)
             {
                 for(int s_pos = s1; s_pos <= s2; s_pos++)
                 {
-                    for(int v_pos = v1; v_pos <= v2; v_pos++)
-                    {
+                    val = s_hs_clasters[h_pos][s_pos];
+                    res += val != 0 ? val : -K0;
 
-                        val = s_hsv_clasters[h_pos][s_pos][v_pos];
-                        res += val != 0 ? val : -K0;
-
-                    }
                 }
             }
         }
@@ -195,23 +183,19 @@ class HsvRangeDetector
       int h2;
       int s1;
       int s2;
-      int v1;
-      int v2;
 
     //initialize clasters
-      memset(s_hsv_clasters, 0, cstrs_max_num*cstrs_max_num*cstrs_max_num*sizeof(int32_t));
+      memset(s_hs_clasters, 0, cstrs_max_num*cstrs_max_num*sizeof(int32_t));
 
     //initialize variables for claster with highest occurrence
       int h_max_pos = 0;
       int s_max_pos = 0;
-      int v_max_pos = 0;
       int max_value = 0;
 
     //clasterize image
       U_Hsv8x3 pixel;
       int h_pos = 0;
       int s_pos = 0;
-      int v_pos = 0;
       
       for (int row = 0; row < height; row++)
       {
@@ -220,26 +204,24 @@ class HsvRangeDetector
           pixel.whole = _loll(*(img)++);
           h_pos = (pixel.parts.h >> pos_shift);
           s_pos = (pixel.parts.s >> pos_shift);
-          v_pos = (pixel.parts.v >> pos_shift);
 
           //positive part of image
           if(pos_l < col && col < pos_r && pos_t < row && row < pos_b)
           {
-            s_hsv_clasters[h_pos][s_pos][v_pos]+=K1;
+            s_hs_clasters[h_pos][s_pos]+=K1;
 
             //remember claster with highest positive occurrence
-            if (s_hsv_clasters[h_pos][s_pos][v_pos] > max_value)
+            if (s_hs_clasters[h_pos][s_pos] > max_value)
             {
-                max_value = s_hsv_clasters[h_pos][s_pos][v_pos];
+                max_value = s_hs_clasters[h_pos][s_pos];
                 h_max_pos = h_pos;
                 s_max_pos = s_pos;
-                v_max_pos = v_pos;
             }
 
           } //negative part of image
           else if(neg_r < col || col < neg_l || neg_b < row || row < neg_t) //wrong condition!!
           {
-            s_hsv_clasters[h_pos][s_pos][v_pos]-=K2;
+            s_hs_clasters[h_pos][s_pos]-=K2;
           }
         }
       }
@@ -251,20 +233,15 @@ class HsvRangeDetector
       h2 = h_max_pos;
       s1 = s_max_pos;
       s2 = s_max_pos;
-      v1 = v_max_pos;
-      v2 = v_max_pos;
 
-      int64_t L = m_foo(h1, h2, s1, s2, v1, v2);
+      int64_t L = m_foo(h1, h2, s1, s2);
 
       double T = 150;
 
       int h1New;
-      int v1New;
       int h2New;
       int s1New;
       int s2New;
-      int v2New;
-
 
       while(/*Th > T_end || Ts > T_end || Tv > T_end*/ T > T_end)
       {
@@ -275,10 +252,8 @@ class HsvRangeDetector
           h2New = truncateHue(getIncrement(h2, 0, cstrs_max_num, T));
           s1New = getIncrement(s1, 0, s_max_pos, T);
           s2New = getIncrement(s2, s_max_pos, cstrs_max_num, T);
-          v1New = getIncrement(v1, 0, v_max_pos, T);
-          v2New = getIncrement(v2, v_max_pos, cstrs_max_num, T);
 
-          int64_t LNew = m_foo(h1New, h2New, s1New, s2New, v1New, v2New);
+          int64_t LNew = m_foo(h1New, h2New, s1New, s2New);
 
           if(L < LNew || (rand()/(double)RAND_MAX) <= pow(e,-(L-LNew)/T))
           {
@@ -286,8 +261,6 @@ class HsvRangeDetector
             h2 = h2New;
             s1 = s1New;
             s2 = s2New;
-            v1 = v1New;
-            v2 = v2New;
 
             L = LNew;
           }
@@ -300,9 +273,6 @@ class HsvRangeDetector
 
       s1 = (s1 << pos_shift)*0.39f;
       s2 = (((s2+1) << pos_shift))*0.39f;
-
-      v1 = (v1 << pos_shift)*0.39f;
-      v2 = (((v2+1) << pos_shift))*0.39f;
 
       if (h1 <= h2) 
       {

@@ -208,10 +208,7 @@ class BitmapBuilder : public CVAlgorithm
         m_detectHueTo   = makeValueWrap (maxHid, +m_detectHueTol, 0, 255);
         m_detectSatFrom = makeValueRange(maxSid, -m_detectSatTol, 0, 255);
         m_detectSatTo   = makeValueRange(maxSid, +m_detectSatTol, 0, 255);
-        /*
-        m_detectValFrom = makeValueRange(maxVid, -m_detectValTol, 0, 255);
-        m_detectValTo   = makeValueRange(maxVid, +m_detectValTol, 0, 255);
-        */
+
         resetHsvRange();
       }
 #endif
