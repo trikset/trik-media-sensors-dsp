@@ -3,7 +3,7 @@
  */
 
 function getSects() {
-    return ("trik/vidtranscode_cv/dsp_server/link.cmd");
+    return ("trik/dsp/ov7670/edge_line_sensor/dsp_server/link.cmd");
 }
 
 function validate() {
