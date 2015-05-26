@@ -144,12 +144,18 @@ class Clusterizer : public CVAlgorithm
 
     int32_t getX(int i)
     {
-      return (clusters[i].x/(clusters[i].size+1))*METAPIX_SIZE;
+      if (clusters[i].size != 0)
+        return (clusters[i].x/(clusters[i].size))*METAPIX_SIZE;
+      else 
+        return 0;
     }
 
     int32_t getY(int i)
     {
-      return (clusters[i].y/(clusters[i].size+1))*METAPIX_SIZE;
+      if (clusters[i].size != 0)
+        return (clusters[i].y/(clusters[i].size))*METAPIX_SIZE;
+      else
+        return 0;
     }
     
     uint16_t getSize(int i)

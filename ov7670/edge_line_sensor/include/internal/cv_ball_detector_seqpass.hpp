@@ -89,18 +89,18 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
       }
 
 //scale that motherf8ckers down!
-      
+
       const uint8_t* restrict cr_in  = reinterpret_cast<const uint8_t*>(s_cr_in);
       uint8_t* restrict cr_out = reinterpret_cast<uint8_t*>(s_cr_out);
       VLIB_image_rescale(cr_in, cr_out, (1 << 13), width, height, 3);
       
       const uint8_t* restrict cb_in  = reinterpret_cast<const uint8_t*>(s_cb_in);
       uint8_t* restrict cb_out = reinterpret_cast<uint8_t*>(s_cb_out);
-      VLIB_image_rescale(cr_in, cr_out, (1 << 13), width, height, 3);
-      
+      VLIB_image_rescale(cb_in, cb_out, (1 << 13), width, height, 3);
+
       const uint8_t* restrict y_in  = reinterpret_cast<const uint8_t*>(_inImage.m_ptr);
       uint8_t* restrict y_out = reinterpret_cast<uint8_t*>(s_y_out);
-      VLIB_image_rescale(cr_in, cr_out, (1 << 13), width, height, 3);
+      VLIB_image_rescale(y_in, y_out, (1 << 13), width, height, 3);
 
 //yuv422pl to rgb565
       const short* restrict coeff = s_coeff;
