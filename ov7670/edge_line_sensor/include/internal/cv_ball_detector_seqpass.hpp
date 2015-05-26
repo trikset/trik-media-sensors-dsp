@@ -27,11 +27,13 @@ extern "C" {
 
 
 #warning Eliminate global var
-static uint8_t s_cb_in[640*480];
-static uint8_t s_cr_in[640*480];
-static uint8_t s_y_out[320*240];
-static uint8_t s_cb_out[320*240];
-static uint8_t s_cr_out[320*240];
+
+static uint8_t m_cb_in[640*480];
+static uint8_t m_cr_in[640*480];
+static uint8_t m_y_out[320*240];
+static uint8_t m_cb_out[320*240];
+static uint8_t m_cr_out[320*240];
+
 static const short s_coeff[5] = { 0x2000, 0x2BDD, -0x0AC5, -0x1658, 0x3770 };
 
 template <>
@@ -42,6 +44,16 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
     TrikCvImageDesc m_inImageDesc;
     TrikCvImageDesc m_outImageDesc;
 
+    uint8_t m_scaleFactor;
+    /*
+    uint8_t *m_y_in;
+    uint8_t *m_cb_in;
+    uint8_t *m_cr_in;
+
+    uint8_t *m_y_out;
+    uint8_t *m_cb_out;
+    uint8_t *m_cr_out;
+*/
     static uint16_t* restrict s_mult43_div;  // allocated from fast ram
     static uint16_t* restrict s_mult255_div; // allocated from fast ram
 
@@ -77,8 +89,8 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
       const uint32_t imgSize        = width*height;
 
 //separate Cb Cr
-      uint8_t* restrict cb   = reinterpret_cast<uint8_t*>(s_cb_in);
-      uint8_t* restrict cr   = reinterpret_cast<uint8_t*>(s_cr_in);
+      uint8_t* restrict cb   = reinterpret_cast<uint8_t*>(m_cb_in);
+      uint8_t* restrict cr   = reinterpret_cast<uint8_t*>(m_cr_in);
       const uint16_t* restrict CbCr = reinterpret_cast<const uint16_t*>(_inImage.m_ptr + 
                                                                     m_inImageDesc.m_lineLength*m_inImageDesc.m_height);
       #pragma MUST_ITERATE(8, ,8)
@@ -88,28 +100,36 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
           CbCr++;
       }
 
+      const unsigned char* restrict y_out;
+      const unsigned char* restrict cb_out;
+      const unsigned char* restrict cr_out;
 //scale that motherf8ckers down!
+      if(m_scaleFactor > 1) {
+        const uint8_t* restrict scale_cr_in  = reinterpret_cast<const uint8_t*>(m_cr_in);
+        uint8_t* restrict scale_cr_out = reinterpret_cast<uint8_t*>(m_cr_out);
+        VLIB_image_rescale(scale_cr_in, scale_cr_out, (1 << 13), width, height, 3);
+        
+        const uint8_t* restrict scale_cb_in  = reinterpret_cast<const uint8_t*>(m_cb_in);
+        uint8_t* restrict scale_cb_out = reinterpret_cast<uint8_t*>(m_cb_out);
+        VLIB_image_rescale(scale_cb_in, scale_cb_out, (1 << 13), width, height, 3);
 
-      const uint8_t* restrict cr_in  = reinterpret_cast<const uint8_t*>(s_cr_in);
-      uint8_t* restrict cr_out = reinterpret_cast<uint8_t*>(s_cr_out);
-      VLIB_image_rescale(cr_in, cr_out, (1 << 13), width, height, 3);
-      
-      const uint8_t* restrict cb_in  = reinterpret_cast<const uint8_t*>(s_cb_in);
-      uint8_t* restrict cb_out = reinterpret_cast<uint8_t*>(s_cb_out);
-      VLIB_image_rescale(cb_in, cb_out, (1 << 13), width, height, 3);
+        const uint8_t* restrict scale_y_in  = reinterpret_cast<const uint8_t*>(_inImage.m_ptr);
+        uint8_t* restrict scale_y_out = reinterpret_cast<uint8_t*>(m_y_out);
+        VLIB_image_rescale(scale_y_in, scale_y_out, (1 << 13), width, height, 3);
 
-      const uint8_t* restrict y_in  = reinterpret_cast<const uint8_t*>(_inImage.m_ptr);
-      uint8_t* restrict y_out = reinterpret_cast<uint8_t*>(s_y_out);
-      VLIB_image_rescale(y_in, y_out, (1 << 13), width, height, 3);
+        cr_out  = reinterpret_cast<const unsigned char*>(m_cr_out);
+        cb_out  = reinterpret_cast<const unsigned char*>(m_cb_out);
+        y_out   = reinterpret_cast<const unsigned char*>(m_y_out);
+      } else {
+        y_out   = reinterpret_cast<const unsigned char*>(_inImage.m_ptr);
+        cb_out  = reinterpret_cast<const unsigned char*>(m_cb_in);
+        cr_out  = reinterpret_cast<const unsigned char*>(m_cr_in);
+      }
 
 //yuv422pl to rgb565
       const short* restrict coeff = s_coeff;
-      const unsigned char* restrict y_out2 = reinterpret_cast<const unsigned char*>(s_y_out);
-      const unsigned char* restrict cb_out2  = reinterpret_cast<const unsigned char*>(s_cb_out);
-      const unsigned char* restrict cr_out2  = reinterpret_cast<const unsigned char*>(s_cr_out);
-      unsigned short* rgb565_out           = reinterpret_cast<unsigned short*>(_outImage.m_ptr);
-      IMG_ycbcr422pl_to_rgb565(coeff, y_out2, cb_out2, cr_out2, rgb565_out, width*height);
-
+      unsigned short* rgb565_out  = reinterpret_cast<unsigned short*>(_outImage.m_ptr);
+      IMG_ycbcr422pl_to_rgb565(coeff, y_out, cb_out, cr_out, rgb565_out, width*height);
     }
 
 
@@ -121,6 +141,16 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
       m_inImageDesc  = _inImageDesc;
       m_outImageDesc = _outImageDesc;
 
+      #define max(x, y) x > y ? x : y
+      m_scaleFactor = std::round(max((double)m_inImageDesc.m_width/m_outImageDesc.m_width, (double)m_inImageDesc.m_height/m_outImageDesc.m_height));
+/*      
+      //m_y_in;
+      m_cb_in = (uint8_t *)malloc(m_inImageDesc.m_width*m_inImageDesc.m_height*sizeof(uint8_t));
+      m_cr_in = (uint8_t *)malloc(m_inImageDesc.m_width*m_inImageDesc.m_height*sizeof(uint8_t));
+      m_y_out = (uint8_t *)malloc(m_outImageDesc.m_width*m_outImageDesc.m_height*sizeof(uint8_t));
+      m_cb_out = (uint8_t *)malloc(m_outImageDesc.m_width*m_outImageDesc.m_height*sizeof(uint8_t));
+      m_cr_out = (uint8_t *)malloc(m_outImageDesc.m_width*m_outImageDesc.m_height*sizeof(uint8_t));
+*/
       if (   m_inImageDesc.m_width < 0
           || m_inImageDesc.m_height < 0
           || m_inImageDesc.m_width  % 32 != 0
