@@ -319,24 +319,14 @@ class JPGEncoder
       //Positive numbers
       for (nr=nrlower; nr<nrupper; nr++) {
         category[32767+nr] = cat;
-        /*
-        bitcode[32767+nr] = new BitString();
-        */
         bitcode[32767+nr].len = cat;
         bitcode[32767+nr].val = nr;
-
-        //bitcode[32767+nr] = {cat, nr};
       }
       //Negative numbers
       for (nr=-(nrupper-1); nr<=-nrlower; nr++) {
         category[32767+nr] = cat;
-        /*
-        bitcode[32767+nr] = new BitString();
-        */
         bitcode[32767+nr].len = cat;
         bitcode[32767+nr].val = nrupper-1+nr;
-
-        //bitcode[32767+nr] = {cat, nrupper-1+nr};
       }
       nrlower <<= 1;
       nrupper <<= 1;
