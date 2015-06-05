@@ -2,6 +2,11 @@
  *  ======== package.xs ========
  */
 
+function getSects() {
+    return ("trik/dsp/ov7670/object_sensor/dsp_server/link.cmd");
+}
+
+
 function validate() {
 
     // Each codec is validated with the following call:

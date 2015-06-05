@@ -49,13 +49,13 @@ typedef struct TRIK_VIDTRANSCODE_CV_DynamicParams {
 
 
 typedef struct TRIK_VIDTRANSCODE_CV_InArgsAlg {
-    XDAS_Bool		  setHsvRange; // [0..359]
-    XDAS_UInt16		detectHue; // [0..359]
-    XDAS_UInt16		detectHueTol;   // [0..359]
-    XDAS_UInt8		detectSat; // [0..100]
-    XDAS_UInt8		detectSatTol;   // [0..100]
-    XDAS_UInt8		detectVal; // [0..100]
-    XDAS_UInt8		detectValTol;   // [0..100]
+    XDAS_Bool		  setHsvRange;
+    XDAS_UInt16		detectHueFrom; // [0..359]
+    XDAS_UInt16		detectHueTo;   // [0..359]
+    XDAS_UInt8		detectSatFrom; // [0..100]
+    XDAS_UInt8		detectSatTo;   // [0..100]
+    XDAS_UInt8		detectValFrom; // [0..100]
+    XDAS_UInt8		detectValTo;   // [0..100]
     XDAS_Bool     autoDetectHsv;// [true|false]
 } TRIK_VIDTRANSCODE_CV_InArgsAlg;
 

@@ -11,7 +11,7 @@
 
 #include "internal/stdcpp.hpp"
 #include "trik_vidtranscode_cv.h"
-#define HSV_CORRECTION
+//#define HSV_CORRECTION
 
 /* **** **** **** **** **** */ namespace trik /* **** **** **** **** **** */ {
 
@@ -108,23 +108,12 @@ class BitmapBuilder : public CVAlgorithm
                      const TrikCvAlgInArgs& _inArgs, TrikCvAlgOutArgs& _outArgs)
     {
       if (_inArgs.setHsvRange) {
-        int32_t detectHueFrom = makeValueWrap( _inArgs.detectHue, -_inArgs.detectHueTol, 0, 359);
-        int32_t detectHueTo   = makeValueWrap( _inArgs.detectHue, +_inArgs.detectHueTol, 0, 359);
-        int32_t detectSatFrom = makeValueRange(_inArgs.detectSat, -_inArgs.detectSatTol, 0, 100);
-        int32_t detectSatTo   = makeValueRange(_inArgs.detectSat, +_inArgs.detectSatTol, 0, 100);
-        int32_t detectValFrom = makeValueRange(_inArgs.detectVal, -_inArgs.detectValTol, 0, 100);
-        int32_t detectValTo   = makeValueRange(_inArgs.detectVal, +_inArgs.detectValTol, 0, 100);
-        
-        m_detectHueTol = range<XDAS_Int16>(0, (_inArgs.detectHueTol * 255) / 359, 255); // scaling 0..359 to 0..255;
-        m_detectSatTol = range<XDAS_Int16>(0, (_inArgs.detectSatTol * 255) / 100, 255); // scaling 0..100 to 0..255;
-        m_detectValTol = range<XDAS_Int16>(0, (_inArgs.detectSatTol * 255) / 100, 255); // scaling 0..100 to 0..255;
-
-        m_detectHueFrom = range<XDAS_Int16>(0, (detectHueFrom * 255) / 359, 255); // scaling 0..359 to 0..255
-        m_detectHueTo   = range<XDAS_Int16>(0, (detectHueTo   * 255) / 359, 255); // scaling 0..359 to 0..255
-        m_detectSatFrom = range<XDAS_Int16>(0, (detectSatFrom * 255) / 100, 255); // scaling 0..100 to 0..255
-        m_detectSatTo   = range<XDAS_Int16>(0, (detectSatTo   * 255) / 100, 255); // scaling 0..100 to 0..255
-        m_detectValFrom = range<XDAS_Int16>(0, (detectValFrom * 255) / 100, 255); // scaling 0..100 to 0..255
-        m_detectValTo   = range<XDAS_Int16>(0, (detectValTo   * 255) / 100, 255); // scaling 0..100 to 0..255
+        m_detectHueFrom = range<XDAS_Int16>(0, (_inArgs.detectHueFrom * 255) / 359, 255); // scaling 0..359 to 0..255
+        m_detectHueTo   = range<XDAS_Int16>(0, (_inArgs.detectHueTo   * 255) / 359, 255); // scaling 0..359 to 0..255
+        m_detectSatFrom = range<XDAS_Int16>(0, (_inArgs.detectSatFrom * 255) / 100, 255); // scaling 0..100 to 0..255
+        m_detectSatTo   = range<XDAS_Int16>(0, (_inArgs.detectSatTo   * 255) / 100, 255); // scaling 0..100 to 0..255
+        m_detectValFrom = range<XDAS_Int16>(0, (_inArgs.detectValFrom * 255) / 100, 255); // scaling 0..100 to 0..255
+        m_detectValTo   = range<XDAS_Int16>(0, (_inArgs.detectValTo   * 255) / 100, 255); // scaling 0..100 to 0..255
 
         resetHsvRange();
       }
@@ -201,7 +190,6 @@ class BitmapBuilder : public CVAlgorithm
           maxS = midS[i];
         }
       }
-      /*
       if(detectedPoints > 32) {
              
         m_detectHueFrom = makeValueWrap (maxHid, -m_detectHueTol, 0, 255);
@@ -211,7 +199,6 @@ class BitmapBuilder : public CVAlgorithm
 
         resetHsvRange();
       }
-      */
 #endif
 
     }

@@ -10,8 +10,8 @@
 
 /* **** **** **** **** **** */ namespace trik /* **** **** **** **** **** */ {
 
-#define IMG_WIDTH_MAX 640
-#define IMG_HEIGHT_MAX 480
+#define IMG_WIDTH_MAX 320
+#define IMG_HEIGHT_MAX 240
 
 #define OBJECTS      8
 #define METAPIX_SIZE 4

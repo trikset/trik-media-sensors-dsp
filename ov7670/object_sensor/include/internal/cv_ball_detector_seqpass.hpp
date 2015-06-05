@@ -11,11 +11,23 @@
 #include <map>
 #include <algorithm>
 
+extern "C" {
+#include "ti/vlib/src/common/VLIB_memory.h"
+#include <ti/vlib/src/VLIB_extractLumaFromYUYV/VLIB_extractLumaFromYUYV.h>
+
+#include <ti/vlib/src/VLIB_xyGradientsAndMagnitude/VLIB_xyGradientsAndMagnitude.h>
+#include <ti/vlib/src/VLIB_harrisScore_7x7/VLIB_harrisScore_7x7.h>
+#include <ti/vlib/src/VLIB_nonMaxSuppress_7x7_S16/VLIB_nonMaxSuppress_7x7_S16.h>
+
+}
+
 #include "internal/stdcpp.hpp"
 #include "trik_vidtranscode_cv.h"
 #include "internal/cv_hsv_range_detector.hpp"
 #include "internal/cv_bitmap_builder.hpp"
 #include "internal/cv_clusterizer.hpp"
+
+#define HARRIS
 
 
 /* **** **** **** **** **** */ namespace trik /* **** **** **** **** **** */ {
@@ -32,8 +44,25 @@ static int32_t s_hi2ho_out[IMG_HEIGHT_MAX];
 static int32_t s_wi2wo_cstr[IMG_WIDTH_MAX];
 static int32_t s_hi2ho_cstr[IMG_HEIGHT_MAX];
 
+static uint8_t s_y[320*240];
+static uint8_t s_cb[320*240];
+static uint8_t s_cr[320*240];
+
+static int16_t s_xGrad[320*240+1];
+static int16_t s_yGrad[320*240+1];
+static int16_t s_gradMag[320*240+1];
+static uint16_t s_harrisScore[320*240];
+
+static int8_t s_corners[320*240];
+
+static uint8_t s_buffer[200]; //200
+
+static const short s_coeff[5] = { 0x2000, 0x2BDD, -0x0AC5, -0x1658, 0x3770 };
+
+
+
 template <>
-class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_RGB565X> : public CVAlgorithm
+class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422, TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_RGB565X> : public CVAlgorithm
 {
   private:
     static const int m_detectZoneScale = 6;
@@ -261,6 +290,28 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
       }
     }
 
+    void __attribute__((always_inline)) drawCornerHighlight(const int32_t _srcCol, 
+                                                                const int32_t _srcRow,
+                                                                const TrikCvImageBuffer& _outImage,
+                                                                const uint32_t _rgb888)
+    {
+      const int32_t widthBot  = 0;
+      const int32_t widthTop  = m_inImageDesc.m_width-1;
+      const int32_t heightBot = 0;
+      const int32_t heightTop = m_inImageDesc.m_height-1;
+
+      drawOutputPixelBound(_srcCol-1, _srcRow-1, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
+      drawOutputPixelBound(_srcCol-1, _srcRow, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
+      drawOutputPixelBound(_srcCol-1, _srcRow+1, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
+      drawOutputPixelBound(_srcCol, _srcRow-1, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
+      drawOutputPixelBound(_srcCol, _srcRow, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
+      drawOutputPixelBound(_srcCol, _srcRow+1, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
+      drawOutputPixelBound(_srcCol+1, _srcRow-1, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
+      drawOutputPixelBound(_srcCol+1, _srcRow, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
+      drawOutputPixelBound(_srcCol+1, _srcRow+1, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
+    }
+
+
 
     static bool __attribute__((always_inline)) detectHsvPixel(const uint32_t _hsv,
                                                               const uint64_t _hsv_range,
@@ -308,6 +359,7 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
       const uint32_t u32_rgb_max_max = _pack2(u32_rgb_max, u32_rgb_max);
 
       const uint32_t u32_hsv_ooo_val_x256   = u32_rgb_max<<8; // get max in 8..15 bits
+
       const uint32_t u32_rgb_min2    = _minu4(_rgb888, _rgb888>>8);
       const uint32_t u32_rgb_min     = _minu4(u32_rgb_min2, u32_rgb_min2>>8); // top 3 bytes are zeroes
       const uint32_t u32_rgb_delta   = u32_rgb_max-u32_rgb_min;
@@ -336,56 +388,75 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
 
       const uint32_t u32_hsv_hue_x256      = static_cast<uint32_t>(s32_hsv_hue_x256);
       const uint32_t u32_hsv_sat_hue_x256  = _pack2(u32_hsv_sat_x256, u32_hsv_hue_x256);
+
       const uint32_t u32_hsv               = _packh4(u32_hsv_ooo_val_x256, u32_hsv_sat_hue_x256);
       return u32_hsv;
     }
-
+    
     void DEBUG_INLINE convertImageYuyvToHsv(const TrikCvImageBuffer& _inImage)
     {
-      const uint32_t srcImageRowEffectiveSize       = m_inImageDesc.m_width;
+    
+      const uint16_t width          = m_inImageDesc.m_width;
+      const uint16_t height         = m_inImageDesc.m_height;
+      const uint32_t srcImageRowEffectiveSize       = m_inImageDesc.m_width*sizeof(uint16_t);
       const uint32_t srcImageRowEffectiveToFullSize = m_inImageDesc.m_lineLength - srcImageRowEffectiveSize;
-      const int8_t* restrict srcImageRowY     = _inImage.m_ptr;
-      const int8_t* restrict srcImageRowC     = _inImage.m_ptr + m_inImageDesc.m_lineLength*m_inImageDesc.m_height;
-      const int8_t* restrict srcImageToY      = srcImageRowY + m_inImageDesc.m_lineLength*m_inImageDesc.m_height;
+      const int8_t* restrict srcImageRow      = _inImage.m_ptr;
+      const int8_t* restrict srcImageTo       = srcImageRow + m_inImageDesc.m_lineLength*m_inImageDesc.m_height;
       uint64_t* restrict rgb888hsvptr         = s_rgb888hsv;
 
       assert(m_inImageDesc.m_height % 4 == 0); // verified in setup
 #pragma MUST_ITERATE(4, ,4)
-      while (srcImageRowY != srcImageToY)
+      while (srcImageRow != srcImageTo)
       {
-        assert(reinterpret_cast<intptr_t>(srcImageRowY) % 8 == 0); // let's pray...
-        assert(reinterpret_cast<intptr_t>(srcImageRowC) % 8 == 0); // let's pray...
-        const uint32_t* restrict srcImageColY4 = reinterpret_cast<const uint32_t*>(srcImageRowY);
-        const uint32_t* restrict srcImageColC4 = reinterpret_cast<const uint32_t*>(srcImageRowC);
-        srcImageRowY += srcImageRowEffectiveSize;
-        srcImageRowC += srcImageRowEffectiveSize;
+        assert(reinterpret_cast<intptr_t>(srcImageRow) % 8 == 0); // let's pray...
+        const uint64_t* restrict srcImageCol4 = reinterpret_cast<const uint64_t*>(srcImageRow);
+        srcImageRow += srcImageRowEffectiveSize;
 
         assert(m_inImageDesc.m_width % 32 == 0); // verified in setup
 #pragma MUST_ITERATE(32/4, ,32/4)
-        while (reinterpret_cast<const int8_t*>(srcImageColY4) != srcImageRowY)
+        while (reinterpret_cast<const int8_t*>(srcImageCol4) != srcImageRow)
         {
-          assert(reinterpret_cast<const int8_t*>(srcImageColC4) != srcImageRowC);
+          const uint64_t yuyv2x = *srcImageCol4++;
 
-          const uint32_t yy4x = *srcImageColY4++;
-          const uint32_t uv4x = _swap4(*srcImageColC4++);
-
-          const uint32_t yuyv12 = (_unpklu4(yy4x)) | (_unpklu4(uv4x)<<8);
-          const uint32_t yuyv34 = (_unpkhu4(yy4x)) | (_unpkhu4(uv4x)<<8);
-
-          const uint64_t rgb12 = convert2xYuyvToRgb888(yuyv12);
+          const uint64_t rgb12 = convert2xYuyvToRgb888(_loll(yuyv2x));
           *rgb888hsvptr++ = _itoll(_loll(rgb12), convertRgb888ToHsv(_loll(rgb12)));
           *rgb888hsvptr++ = _itoll(_hill(rgb12), convertRgb888ToHsv(_hill(rgb12)));
 
-          const uint64_t rgb34 = convert2xYuyvToRgb888(yuyv34);
+          const uint64_t rgb34 = convert2xYuyvToRgb888(_hill(yuyv2x));
           *rgb888hsvptr++ = _itoll(_loll(rgb34), convertRgb888ToHsv(_loll(rgb34)));
           *rgb888hsvptr++ = _itoll(_hill(rgb34), convertRgb888ToHsv(_hill(rgb34)));
         }
 
-        srcImageRowY += srcImageRowEffectiveToFullSize;
-        srcImageRowC += srcImageRowEffectiveToFullSize;
+        srcImageRow += srcImageRowEffectiveToFullSize;
       }
-    }
+      
 
+#ifdef HARRIS
+//get luma
+      const uint8_t* restrict pInYUYV = reinterpret_cast<const uint8_t*>(_inImage.m_ptr);
+      uint8_t *restrict pOutY         = reinterpret_cast<uint8_t*>(s_y);
+      VLIB_extractLumaFromYUYV(pInYUYV,width, width, height, pOutY);
+      
+//Harris corner detector
+      VLIB_xyGradientsAndMagnitude(reinterpret_cast<const uint8_t*>(s_y), 
+                                   reinterpret_cast<int16_t*>(s_xGrad), 
+                                   reinterpret_cast<int16_t*>(s_yGrad),
+                                   reinterpret_cast<int16_t*>(s_gradMag), width, height);
+
+      VLIB_harrisScore_7x7(reinterpret_cast<const int16_t*>(s_xGrad),
+                           reinterpret_cast<const int16_t*>(s_yGrad),
+                           width, height,
+                           reinterpret_cast<int16_t*>(s_harrisScore),
+                           1500, 
+                           reinterpret_cast<uint8_t*>(s_buffer));
+
+      VLIB_nonMaxSuppress_7x7_S16(reinterpret_cast<const int16_t*>(s_harrisScore), 
+                                  width, height, 7000, 
+                                  reinterpret_cast<uint8_t*>(s_corners));
+                            
+#endif
+    }
+    
     void DEBUG_INLINE proceedImageHsv(TrikCvImageBuffer& _outImage)
     {
         const uint64_t* restrict rgb888hsvptr = s_rgb888hsv;
@@ -417,8 +488,24 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
             const bool det = clusterNum;
 
             writeOutputPixel(dstImageRow+dstCol, det?0x00ffff:_hill(rgb888hsv));
+            
           }
         }
+        
+#ifdef HARRIS
+      const uint8_t* restrict corners  = reinterpret_cast<uint8_t*>(s_corners);
+      #pragma MUST_ITERATE(8, ,8)
+      for(int r = 0; r < height; r++) {
+        #pragma MUST_ITERATE(8, ,8)
+        for(int c = 0; c < width; c++) {
+          if(c > 5 && c < 315 && r > 5 && r < 235)
+            if (*corners != 0)
+              drawCornerHighlight(c, r, _outImage, 0xff0000);
+          corners++;
+        }
+      }
+#endif
+
     }
 
 
@@ -602,9 +689,9 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
     }
 };
 
-uint16_t* restrict BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P,
+uint16_t* restrict BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422,
                                 TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_RGB565X>::s_mult43_div = NULL;
-uint16_t* restrict BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P,
+uint16_t* restrict BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422,
                                 TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_RGB565X>::s_mult255_div = NULL;
 
 
