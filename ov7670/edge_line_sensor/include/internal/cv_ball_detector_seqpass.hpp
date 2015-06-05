@@ -16,6 +16,7 @@ extern "C" {
 #include <ti/vlib/src/VLIB_image_rescale/VLIB_image_rescale.h>
 #include <ti/vlib/src/VLIB_convertUYVYsemipl_to_YUVpl/VLIB_convertUYVYsemipl_to_YUVpl.h>
 #include <ti/vlib/src/VLIB_Canny_Edge_Detection/VLIB_Canny_Edge_Detection.h>
+#include <ti/vlib/src/VLIB_xyGradients/VLIB_xyGradients.h>
 }
 
 #include "internal/stdcpp.hpp"
@@ -30,7 +31,7 @@ extern "C" {
 
 
 #warning Eliminate global var
-
+static int16_t s_yGrad[320*240+1];
 static const short s_coeff[5] = { 0x2000, 0x2BDD, -0x0AC5, -0x1658, 0x3770 };
 
 template <>
@@ -43,7 +44,7 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
 
     uint8_t m_scaleFactor;
 
-    uint8_t *m_y_in; //usually not used
+    uint8_t *m_y_in;
     uint8_t *m_cb_in;
     uint8_t *m_cr_in;
 
@@ -95,23 +96,26 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
       const uint8_t* restrict CbCr = reinterpret_cast<const uint8_t*>(_inImage.m_ptr + 
                                                                         m_inImageDesc.m_lineLength*height);
       VLIB_convertUYVYsemipl_to_YUVpl(CbCr, width, width, height, separated_cb, separated_cr);
+      
 /*
 //create HSL
         const uint8_t* restrict sep_cb = reinterpret_cast<const uint8_t*>(m_cb_in);
         const uint8_t* restrict sep_cr = reinterpret_cast<const uint8_t*>(m_cr_in);
         const uint8_t* restrict sep_y  = reinterpret_cast<const uint8_t*>(_inImage.m_ptr);
-        const uint8_t* restrict inteleaved_yuv = reinterpret_cast<const uint8_t*>(_inImage.m_ptr);
+        const uint8_t* restrict interleaved_yuv = reinterpret_cast<const uint8_t*>(_inImage.m_ptr);
         int32_t VLIB_convertUYVYpl_to_YUVint(sep_y, sep_cr, sep_cb,
                                              width, width, height,
                                              uint8_t *restrict yc);
 */
 
+/*
 //Gaussian blur 
       IMG_conv_3x3_i8_c8s (const unsigned char *restrict inptr,
                            unsigned char *restrict outptr,
-                                           int            x_dim,
-                                const          char *restrict mask,
-                                               int            shift);
+                           int            x_dim,
+                           const          char *restrict mask,
+                           int            shift);
+*/
 
 //scale that muttersaftsack down!
       uint8_t* y_out;
@@ -119,7 +123,7 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
       uint8_t* cr_out;
 
       if(m_scaleFactor > 1) {
-        const uint8_t* restrict scale_y_in  = reinterpret_cast<const uint8_t*>(_inImage.m_ptr);
+        const uint8_t* restrict scale_y_in  = reinterpret_cast<const uint8_t*>(m_y_in);
         uint8_t* restrict scale_y_out = reinterpret_cast<uint8_t*>(m_y_out);
         VLIB_image_rescale(scale_y_in, scale_y_out, (1 << 13), width, height, 3);
 
@@ -135,12 +139,12 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
         cb_out  = m_cb_out;
         cr_out  = m_cr_out;
       } else {
-        y_out   = reinterpret_cast<uint8_t*>(_inImage.m_ptr);
+        y_out   = reinterpret_cast<uint8_t*>(m_y_in);
         cb_out  = m_cb_in;
         cr_out  = m_cr_in;
       }
 
-//yuv422pl to rgb565
+//yuv422pl to rgb565 to outImage
       const short* restrict coeff = s_coeff;
       unsigned short* rgb565_out  = reinterpret_cast<unsigned short*>(_outImage.m_ptr);
       IMG_ycbcr422pl_to_rgb565(coeff, reinterpret_cast<const unsigned char*>(y_out), 
@@ -160,7 +164,7 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
       #define max(x, y) x > y ? x : y
       m_scaleFactor = std::round(max((double)m_inImageDesc.m_width/m_outImageDesc.m_width, (double)m_inImageDesc.m_height/m_outImageDesc.m_height));
 
-      //m_y_in;
+      m_y_in  = (uint8_t *)VLIB_memalign(64, m_inImageDesc.m_width*m_inImageDesc.m_height*sizeof(uint8_t));
       m_cb_in = (uint8_t *)VLIB_memalign(64, m_inImageDesc.m_width*m_inImageDesc.m_height*sizeof(uint8_t));
       m_cr_in = (uint8_t *)VLIB_memalign(64, m_inImageDesc.m_width*m_inImageDesc.m_height*sizeof(uint8_t));
 
