@@ -201,7 +201,7 @@ class BitmapBuilder : public CVAlgorithm
           maxS = midS[i];
         }
       }
-      
+      /*
       if(detectedPoints > 32) {
              
         m_detectHueFrom = makeValueWrap (maxHid, -m_detectHueTol, 0, 255);
@@ -211,6 +211,7 @@ class BitmapBuilder : public CVAlgorithm
 
         resetHsvRange();
       }
+      */
 #endif
 
     }
