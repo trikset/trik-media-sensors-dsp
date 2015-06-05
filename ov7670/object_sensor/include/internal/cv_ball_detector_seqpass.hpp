@@ -447,11 +447,11 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422, TRIK_VIDTRANSCODE_C
                            reinterpret_cast<const int16_t*>(s_yGrad),
                            width, height,
                            reinterpret_cast<int16_t*>(s_harrisScore),
-                           1500, 
+                           2500, 
                            reinterpret_cast<uint8_t*>(s_buffer));
 
       VLIB_nonMaxSuppress_7x7_S16(reinterpret_cast<const int16_t*>(s_harrisScore), 
-                                  width, height, 7000, 
+                                  width, height, 10000, 
                                   reinterpret_cast<uint8_t*>(s_corners));
                             
 #endif
@@ -498,7 +498,7 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422, TRIK_VIDTRANSCODE_C
       for(int r = 0; r < height; r++) {
         #pragma MUST_ITERATE(8, ,8)
         for(int c = 0; c < width; c++) {
-          if(c > 5 && c < 315 && r > 5 && r < 235)
+          if(c > 10 && c < 310 && r > 10 && r < 230)
             if (*corners != 0)
               drawCornerHighlight(c, r, _outImage, 0xff0000);
           corners++;
