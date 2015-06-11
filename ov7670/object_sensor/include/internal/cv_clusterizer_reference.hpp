@@ -182,7 +182,6 @@ class Clusterizer : public CVAlgorithm
       Target bg;
       memset(&bg, 0, sizeof(Target));
       clusters.push_back(bg);
-
       m_maxCluster = 1;
 
       const uint16_t* restrict srcImgPtr = reinterpret_cast<uint16_t*>(_inImage.m_ptr);
@@ -197,6 +196,7 @@ class Clusterizer : public CVAlgorithm
           dstImgPtr++;
         }
       }
+      
       postProcessing();
       return true;
     }

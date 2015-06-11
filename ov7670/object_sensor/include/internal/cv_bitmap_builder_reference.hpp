@@ -11,7 +11,7 @@
 
 #include "internal/stdcpp.hpp"
 #include "trik_vidtranscode_cv.h"
-#define HSV_CORRECTION
+//#define HSV_CORRECTION
 
 /* **** **** **** **** **** */ namespace trik /* **** **** **** **** **** */ {
 
@@ -169,6 +169,7 @@ class BitmapBuilder : public CVAlgorithm
         for (TrikCvImageDimension srcCol = 0; srcCol < m_inImageDesc.m_width; srcCol++) {
           pixel.whole = _loll(*(p_inImg++));
           bool det = detectHsvPixel(pixel.whole, u64_hsv_range, u32_hsv_expect);
+          
 #ifdef HSV_CORRECTION
           if(det) {
             midH[pixel.parts.h]++;
