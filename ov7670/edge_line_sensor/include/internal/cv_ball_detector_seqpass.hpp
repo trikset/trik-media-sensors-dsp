@@ -23,7 +23,7 @@ extern "C" {
 #include "trik_vidtranscode_cv.h"
 #include "internal/cv_hsv_range_detector.hpp"
 
-
+//#define CORNERS
 /* **** **** **** **** **** */ namespace trik /* **** **** **** **** **** */ {
 
 /* **** **** **** **** **** */ namespace cv /* **** **** **** **** **** */ {
@@ -131,9 +131,9 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
     }
 
     void __attribute__((always_inline)) drawCornerHighlight(const int32_t _srcCol, 
-                                                                const int32_t _srcRow,
-                                                                const TrikCvImageBuffer& _outImage,
-                                                                const uint32_t _rgb888)
+                                                            const int32_t _srcRow,
+                                                            const TrikCvImageBuffer& _outImage,
+                                                            const uint32_t _rgb888)
     {
       const int32_t widthBot  = 0;
       const int32_t widthTop  = m_inImageDesc.m_width-1;
@@ -150,24 +150,6 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
       drawOutputPixelBound(_srcCol+1, _srcRow, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
       drawOutputPixelBound(_srcCol+1, _srcRow+1, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
     }
-
-    void __attribute__((always_inline)) drawRgbTargetHorizontalCenterLine(const int32_t _srcCol, 
-                                                                const int32_t _srcRow,
-                                                                const TrikCvImageBuffer& _outImage,
-                                                                const uint32_t _rgb888)
-    {
-      const int32_t widthBot  = 0;
-      const int32_t widthTop  = m_inImageDesc.m_width-1;
-      const int32_t heightBot = 0;
-      const int32_t heightTop = m_inImageDesc.m_height-1;
-
-      for (int adj = 0; adj < 100; ++adj) 
-      {
-        drawOutputPixelBound(_srcCol-adj  , _srcRow, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
-        drawOutputPixelBound(_srcCol+adj  , _srcRow, widthBot, widthTop, heightBot, heightTop, _outImage, _rgb888);
-      }
-    }
-
 
     void DEBUG_INLINE convertImageYuyvToRgb(const TrikCvImageBuffer& _inImage, TrikCvImageBuffer& _outImage)
     {
@@ -222,7 +204,7 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
         m_targetPoints += targetPointsPerRow;
       }
 
-#if 0
+#ifdef CORNERS
 //Harris corner detector
       VLIB_xyGradientsAndMagnitude(reinterpret_cast<const uint8_t*>(_inImage.m_ptr), 
                                    reinterpret_cast<int16_t*>(s_xGrad), 
@@ -252,7 +234,6 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
 
 //lets try scaling out // & highlight corners
       const uint16_t* restrict imgRgb565ptr  = reinterpret_cast<uint16_t*>(s_gradMag);
-//      const uint8_t* restrict corners  = reinterpret_cast<uint8_t*>(s_corners);
       const uint32_t dstLineLength  = m_outImageDesc.m_lineLength;
       const uint32_t* restrict p_hi2ho = s_hi2ho;
       #pragma MUST_ITERATE(8, ,8)
@@ -260,20 +241,30 @@ class BallDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCODE_
         const uint32_t dR = *(p_hi2ho++);
         uint16_t* restrict dIR = reinterpret_cast<uint16_t*>(_outImage.m_ptr + dR*dstLineLength);
         const uint32_t* restrict p_wi2wo = s_wi2wo;
-
         #pragma MUST_ITERATE(8, ,8)
         for(int c = 0; c < width; c++) {
           const uint32_t dC = *(p_wi2wo++);
           *(dIR+dC) = *(imgRgb565ptr++);
-          /*
+        }
+      }
+
+#ifdef CORNERS
+      const uint8_t* restrict corners  = reinterpret_cast<uint8_t*>(s_corners);      
+      p_hi2ho = s_hi2ho;
+      for(int r = 0; r < height; r++) {
+        const uint32_t dR = *(p_hi2ho++);
+        uint16_t* dIR = reinterpret_cast<uint16_t*>(_outImage.m_ptr + dR*dstLineLength);
+        const uint32_t* restrict p_wi2wo = s_wi2wo;
+        for(int c = 0; c < width; c++) {
+          const uint32_t dC = *(p_wi2wo++);
           if(c > 5 && c < 315 && r > 5 && r < 235)
             if (*corners != 0)
               drawCornerHighlight(c, r, _outImage, 0xff0000);
           corners++;
-          */
-
         }
       }
+#endif
+
     }
 
     void DEBUG_INLINE proceedImageHsv(const TrikCvImageBuffer& _inImage, TrikCvImageBuffer& _outImage)
