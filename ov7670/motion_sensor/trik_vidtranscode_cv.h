@@ -26,9 +26,7 @@ typedef enum TRIK_VIDTRANSCODE_CV_VideoFormat
   TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_RGB565X,
   TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV444,
   TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422,
-  TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P,
-  TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_RGB888HSV,
-  TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_METABITMAP
+  TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P
 } TRIK_VIDTRANSCODE_CV_VideoFormat;
 
 
@@ -49,18 +47,11 @@ typedef struct TRIK_VIDTRANSCODE_CV_DynamicParams {
 
 
 typedef struct TRIK_VIDTRANSCODE_CV_InArgsAlg {
-    XDAS_Bool		  setHsvRange; // [0..359]
-    XDAS_UInt16		detectHue; // [0..359]
-    XDAS_UInt16		detectHueTol;   // [0..359]
-    XDAS_UInt8		detectSat; // [0..100]
-    XDAS_UInt8		detectSatTol;   // [0..100]
-    XDAS_UInt8		detectVal; // [0..100]
-    XDAS_UInt8		detectValTol;   // [0..100]
-    XDAS_Bool     autoDetectHsv;// [true|false]
+
 } TRIK_VIDTRANSCODE_CV_InArgsAlg;
 
 typedef struct TRIK_VIDTRANSCODE_CV_InArgs {
-    IVIDTRANSCODE_InArgs		base;
+    IVIDTRANSCODE_InArgs    base;
     TRIK_VIDTRANSCODE_CV_InArgsAlg	alg;
 } TRIK_VIDTRANSCODE_CV_InArgs;
 
@@ -72,12 +63,6 @@ typedef struct XDAS_Target {
 
 typedef struct TRIK_VIDTRANSCODE_CV_OutArgsAlg {
     XDAS_Target   target[8];
-    XDAS_UInt16		detectHue; // [0..256]
-    XDAS_UInt16		detectHueTolerance;   // [0..256]
-    XDAS_UInt16		detectSat; // [0..256]
-    XDAS_UInt16		detectSatTolerance;   // [0..256]
-    XDAS_UInt16		detectVal; // [0..256]
-    XDAS_UInt16		detectValTolerance;   // [0..256]
 } TRIK_VIDTRANSCODE_CV_OutArgsAlg;
 
 typedef struct TRIK_VIDTRANSCODE_CV_OutArgs {
