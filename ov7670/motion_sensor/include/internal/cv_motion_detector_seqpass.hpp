@@ -343,10 +343,14 @@ class MotionDetector<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANSCOD
                                                 &m_maxBytesRequired);
 
       m_CCBuf    = (void *)VLIB_memalign(32, m_maxBytesRequired);
+
       m_sizeOfCCHandle =  VLIB_GetSizeOfCCHandle();
       m_handle = (VLIB_CCHandle *)VLIB_memalign(8, m_sizeOfCCHandle);
+
+      /* INITIALIZE FOREGROUND MASK AND MEMORY BUFFERS*/
       m_status = VLIB_initConnectedComponentsList(m_handle, m_CCBuf, m_maxBytesRequired);
 
+//Mask! 
       m_mask32packed = (uint32_t *)VLIB_memalign(8, m_inImageDesc.m_width*m_inImageDesc.m_height*sizeof(uint32_t));
 
       if (   m_inImageDesc.m_width < 0
