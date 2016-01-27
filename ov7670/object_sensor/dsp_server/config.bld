@@ -19,13 +19,13 @@ for (x = 0; x < arguments.length; x++) {
 }
 
 
-// cc000000   cd000000
+
 // c0000000 - c8000000 - Linux
-// c8000000 - ca000000 - CMEM
-// ca000000 - cd000000 - DDRALGHEAP
-// cd000000 - cf000000 - DDR2
-// cf000000 - cf800000 - SR1
-// cf800000 - d0000000 - SYSLINK
+// c8000000 - c9000000 - CMEM
+// c9000000 - ca800000 - DDRALGHEAP
+// ca800000 - cb800000 - DDR2
+// cb800000 - cbc00000 - SR1
+// cbc00000 - cc000000 - SYSLINK
 
 var mem_ext = [
 ["DDRCMEM", {
