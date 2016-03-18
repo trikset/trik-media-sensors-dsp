@@ -44,7 +44,7 @@ class JPGEncoderWrapper<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANS
           || m_inImageDesc.m_height % 4  != 0)
         return false;
 
-      jpgEncoder.init(50);
+      //jpgEncoder.init(10);
 
       return true;
     }
@@ -58,6 +58,8 @@ class JPGEncoderWrapper<TRIK_VIDTRANSCODE_CV_VIDEO_FORMAT_YUV422P, TRIK_VIDTRANS
         return false;
 
       _outImage.m_size = m_outImageDesc.m_height * m_outImageDesc.m_lineLength;
+
+      jpgEncoder.init(_inArgs.jpgImageQuality, _inArgs.ifBlackAndWhite);//no checks needed for they are conducted in jpgEncoder.
       
 #ifdef DEBUG_REPEAT
       for (unsigned repeat = 0; repeat < DEBUG_REPEAT; ++repeat) {

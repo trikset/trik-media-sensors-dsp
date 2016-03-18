@@ -47,6 +47,8 @@ typedef struct TRIK_VIDTRANSCODE_CV_DynamicParams {
 
 
 typedef struct TRIK_VIDTRANSCODE_CV_InArgsAlg {
+  XDAS_UInt8		jpgImageQuality;   // [1..100]
+  XDAS_UInt8		ifBlackAndWhite;   // 0/1
 } TRIK_VIDTRANSCODE_CV_InArgsAlg;
 
 typedef struct TRIK_VIDTRANSCODE_CV_InArgs {

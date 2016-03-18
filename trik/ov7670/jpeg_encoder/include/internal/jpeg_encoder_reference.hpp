@@ -218,6 +218,8 @@ class JPGEncoder
   Arr64 YTable, UVTable;
   Arr64d fdtbl_Y, fdtbl_UV;
 
+  uint8_t ifBlackAndWhite;
+
   // Static table initialization
 
   static Arr64 ZigZag;
@@ -527,41 +529,51 @@ class JPGEncoder
   void writeSOF0(int width, int height)
   {
     writeWord(0xFFC0); // marker
-    writeWord(17);   // length, truecolor YUV JPG
+    if (ifBlackAndWhite) writeWord(11);
+        else writeWord(17);   // length, truecolor YUV JPG
+
     writeByte(8);    // precision
     writeWord(height);
     writeWord(width);
-    writeByte(3);    // nrofcomponents
+    if (ifBlackAndWhite) writeByte(1);
+        else writeByte(3);    // nrofcomponents
+
     writeByte(1);    // IdY
     writeByte(0x11); // HVY
     writeByte(0);    // QTY
-    writeByte(2);    // IdU
-    writeByte(0x11); // HVU
-    writeByte(1);    // QTU
-    writeByte(3);    // IdV
-    writeByte(0x11); // HVV
-    writeByte(1);    // QTV
+    if (!ifBlackAndWhite) {
+        writeByte(2);    // IdU
+        writeByte(0x11); // HVU
+        writeByte(1);    // QTU
+        writeByte(3);    // IdV
+        writeByte(0x11); // HVV
+        writeByte(1);    // QTV
+    }
   }
 
   void writeDQT()
   {
     writeWord(0xFFDB); // marker
-    writeWord(132);    // length
+    if (ifBlackAndWhite) writeWord(67);
+        else writeWord(132);    // length
     writeByte(0);
     int i;
     for (i=0; i<64; i++) {
       writeByte(YTable[i]);
     }
-    writeByte(1);
-    for (i=0; i<64; i++) {
-      writeByte(UVTable[i]);
+    if (!ifBlackAndWhite) {
+        writeByte(1);
+        for (i=0; i<64; i++) {
+          writeByte(UVTable[i]);
+        }
     }
   }
 
   void writeDHT()
   {
     writeWord(0xFFC4); // marker
-    writeWord(0x01A2); // length
+    if (ifBlackAndWhite) writeWord(0xD2);
+        else writeWord(0x01A2); // length
     int i;
 
     writeByte(0); // HTYDCinfo
@@ -579,35 +591,44 @@ class JPGEncoder
     for (i=0; i<=161; i++) {
       writeByte(std_ac_luminance_values[i]);
     }
+    if (!ifBlackAndWhite) {
+        writeByte(1); // HTUDCinfo
+        for (i=0; i<16; i++) {
+          writeByte(std_dc_chrominance_nrcodes[i+1]);
+        }
+        for (i=0; i<=11; i++) {
+          writeByte(std_dc_chrominance_values[i]);
+        }
 
-    writeByte(1); // HTUDCinfo
-    for (i=0; i<16; i++) {
-      writeByte(std_dc_chrominance_nrcodes[i+1]);
-    }
-    for (i=0; i<=11; i++) {
-      writeByte(std_dc_chrominance_values[i]);
-    }
-
-    writeByte(0x11); // HTUACinfo
-    for (i=0; i<16; i++) {
-      writeByte(std_ac_chrominance_nrcodes[i+1]);
-    }
-    for (i=0; i<=161; i++) {
-      writeByte(std_ac_chrominance_values[i]);
+        writeByte(0x11); // HTUACinfo
+        for (i=0; i<16; i++) {
+          writeByte(std_ac_chrominance_nrcodes[i+1]);
+        }
+        for (i=0; i<=161; i++) {
+          writeByte(std_ac_chrominance_values[i]);
+        }
     }
   }
 
   void writeSOS()
   {
     writeWord(0xFFDA); // marker
-    writeWord(12); // length
-    writeByte(3); // nrofcomponents
+    if (ifBlackAndWhite) {
+        writeWord(8); // length
+        writeByte(1); // nrofcomponents
+    }
+    else {
+        writeWord(12); // length
+        writeByte(3); // nrofcomponents
+    }
     writeByte(1); // IdY
     writeByte(0); // HTY
-    writeByte(2); // IdU
-    writeByte(0x11); // HTU
-    writeByte(3); // IdV
-    writeByte(0x11); // HTV
+    if (!ifBlackAndWhite) {
+        writeByte(2); // IdU
+        writeByte(0x11); // HTU
+        writeByte(3); // IdV
+        writeByte(0x11); // HTV
+    }
     writeByte(0); // Ss
     writeByte(0x3f); // Se
     writeByte(0); // Bf
@@ -731,8 +752,10 @@ class JPGEncoder
    * @playerversion Flash 9.0
    * @tiptext
    */
-  void init(int quality)
+  void init(int quality, uint8_t ifBnW)
   {
+    ifBlackAndWhite = ifBnW;
+
     if (quality <= 0) {
       quality = 1;
     }
@@ -783,14 +806,28 @@ class JPGEncoder
     int DCV=0;
     bytenew=0;
     bytepos=8;
-    for (int ypos=0; ypos<height; ypos+=8) {
-      for (int xpos=0; xpos<width; xpos+=8) {
-        //RGB2YUV(image, xpos, ypos, width);
-        getBlock(image, xpos, ypos, width, height);
-        DCY = processDU(YDU, fdtbl_Y, DCY, YDC_HT, YAC_HT);
-        DCU = processDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
-        DCV = processDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
-      }
+
+    //if 'if' is here, than there's more code duplication but less checks comparing to
+    //checking it each cycle iteration
+    if (ifBlackAndWhite) {
+        for (int ypos=0; ypos<height; ypos+=8) {
+          for (int xpos=0; xpos<width; xpos+=8) {
+            //RGB2YUV(image, xpos, ypos, width);
+            getBlock(image, xpos, ypos, width, height);
+            DCY = processDU(YDU, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+          }
+        }
+    }
+    else {
+        for (int ypos=0; ypos<height; ypos+=8) {
+          for (int xpos=0; xpos<width; xpos+=8) {
+            //RGB2YUV(image, xpos, ypos, width);
+            getBlock(image, xpos, ypos, width, height);
+            DCY = processDU(YDU, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+            DCU = processDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
+            DCV = processDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
+          }
+        }
     }
 
     // Do the bit alignment of the EOI marker
