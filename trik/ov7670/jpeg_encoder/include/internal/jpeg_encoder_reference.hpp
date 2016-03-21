@@ -330,6 +330,7 @@ class JPGEncoder
         //bitcode[32767+nr] = {cat, nr};
       }
       //Negative numbers
+      //#pragma MUST_ITERATE(1, ,1)
       for (nr=-(nrupper-1); nr<=-nrlower; nr++) {
         category[32767+nr] = cat;
         /*
@@ -577,14 +578,17 @@ class JPGEncoder
     int i;
 
     writeByte(0); // HTYDCinfo
+    #pragma MUST_ITERATE(32, 32, 32)
     for (i=0; i<16; i++) {
       writeByte(std_dc_luminance_nrcodes[i+1]);
     }
+    #pragma MUST_ITERATE(12, 12, 12)
     for (i=0; i<=11; i++) {
       writeByte(std_dc_luminance_values[i]);
     }
 
     writeByte(0x10); // HTYACinfo
+    #pragma MUST_ITERATE(16, 16, 16)
     for (i=0; i<16; i++) {
       writeByte(std_ac_luminance_nrcodes[i+1]);
     }
@@ -593,14 +597,17 @@ class JPGEncoder
     }
     if (!ifBlackAndWhite) {
         writeByte(1); // HTUDCinfo
+        #pragma MUST_ITERATE(16, 16, 16)
         for (i=0; i<16; i++) {
           writeByte(std_dc_chrominance_nrcodes[i+1]);
         }
+        #pragma MUST_ITERATE(12, 12, 12)
         for (i=0; i<=11; i++) {
           writeByte(std_dc_chrominance_values[i]);
         }
 
         writeByte(0x11); // HTUACinfo
+        #pragma MUST_ITERATE(16, 16, 16)
         for (i=0; i<16; i++) {
           writeByte(std_ac_chrominance_nrcodes[i+1]);
         }
@@ -649,6 +656,7 @@ class JPGEncoder
     Arr64 DU_DCT = fDCTQuant(CDU, fdtbl);
 
     //ZigZag reorder
+    #pragma MUST_ITERATE(64, ,64)
     for (i=0;i<64;i++) {
       DU[ZigZag[i]]=DU_DCT[i];
     }
