@@ -100,11 +100,11 @@ struct array {
     std::copy(_data, _data + S, data);
   }
 
-  T& operator[](int i) {
+   T& restrict operator[](int i) restrict {
     return data[i];
   }
 
-  const T& operator[](int i) const {
+  const T& restrict operator[](int i) const restrict {
     return data[i];
   }
 };
@@ -648,15 +648,15 @@ class JPGEncoder
   int processDU(Arr64 const& CDU, Arr64d const& fdtbl, int DC,
                 array<BitString, Size0> const& HTDC,
                 array<BitString, Size1> const& HTAC)
+  restrict
   {
     BitString EOB = HTAC[0x00];//.find(0x00)->second;
     BitString M16zeroes = HTAC[0xF0];//.find(0xF0)->second;
     int i;
 
     Arr64 DU_DCT = fDCTQuant(CDU, fdtbl);
-
     //ZigZag reorder
-    #pragma MUST_ITERATE(64, ,64)
+    #pragma MUST_ITERATE(64, 64,64)
     for (i=0;i<64;i++) {
       DU[ZigZag[i]]=DU_DCT[i];
     }
