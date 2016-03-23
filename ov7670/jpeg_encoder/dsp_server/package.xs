@@ -3,7 +3,7 @@
  */
 
 function getSects() {
-    return ("trik/vidtranscode_cv/dsp_server/link.cmd");
+ //#   return ("link.cmd");
 }
 
 function validate() {
