@@ -109,8 +109,34 @@ struct array {
   }
 };
 
+template<typename T, size_t S>
+struct arrayPower2 {
+  #pragma DATA_ALIGN(S)
+  T data[S];
+
+  arrayPower2() { }
+
+  arrayPower2(const T(& _data)[S]) {
+    init(_data);
+  }
+
+  void init(const T(& _data)[S]) {
+    std::copy(_data, _data + S, data);
+  }
+
+   T& restrict operator[](int i) restrict {
+    return data[i];
+  }
+
+  const T& restrict operator[](int i) const restrict {
+    return data[i];
+  }
+};
+
 typedef array<int,64> Arr64;
 typedef array<double,64> Arr64d;
+//typedef arrayPower2<int,64> Arr64;
+//typedef arrayPower2<double,64> Arr64d;
 
 typedef uint8_t PixIn;
 typedef uint8_t PixOut;
@@ -215,7 +241,9 @@ static double _aasf[8] = {
 class JPGEncoder
 {
   private:
-  Arr64 YTable, UVTable;
+  //#pragma DATA_ALIGN (64);
+  Arr64 YTable;
+  Arr64 UVTable;
   Arr64d fdtbl_Y, fdtbl_UV;
 
   uint8_t ifBlackAndWhite;
@@ -657,6 +685,7 @@ class JPGEncoder
     Arr64 DU_DCT = fDCTQuant(CDU, fdtbl);
     //ZigZag reorder
     #pragma MUST_ITERATE(64, 64,64)
+    #pragma UNROLL(2)
     for (i=0;i<64;i++) {
       DU[ZigZag[i]]=DU_DCT[i];
     }
