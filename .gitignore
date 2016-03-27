@@ -7,3 +7,4 @@ package
 package.mak
 trik_dsp_*.tar
 ov7670/*/lib
+lib/release/*
