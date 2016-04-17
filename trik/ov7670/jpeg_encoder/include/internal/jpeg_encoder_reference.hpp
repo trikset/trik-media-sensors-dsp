@@ -109,34 +109,8 @@ struct array {
   }
 };
 
-template<typename T, size_t S>
-struct arrayPower2 {
-  #pragma DATA_ALIGN(S)
-  T data[S];
-
-  arrayPower2() { }
-
-  arrayPower2(const T(& _data)[S]) {
-    init(_data);
-  }
-
-  void init(const T(& _data)[S]) {
-    std::copy(_data, _data + S, data);
-  }
-
-   T& restrict operator[](int i) restrict {
-    return data[i];
-  }
-
-  const T& restrict operator[](int i) const restrict {
-    return data[i];
-  }
-};
-
 typedef array<int,64> Arr64;
 typedef array<double,64> Arr64d;
-//typedef arrayPower2<int,64> Arr64;
-//typedef arrayPower2<double,64> Arr64d;
 
 typedef uint8_t PixIn;
 typedef uint8_t PixOut;
@@ -246,7 +220,7 @@ class JPGEncoder
   Arr64 UVTable;
   Arr64d fdtbl_Y, fdtbl_UV;
 
-  uint8_t ifBlackAndWhite;
+  bool ifBlackAndWhite;
 
   // Static table initialization
 
@@ -433,6 +407,7 @@ class JPGEncoder
     int i;
     /* Pass 1: process rows. */
     int dataOff=0;
+    #pragma MUST_ITERATE(8,8,8)
     for (i=0; i<8; i++) {
       tmp0 = data[dataOff+0] + data[dataOff+7];
       tmp7 = data[dataOff+0] - data[dataOff+7];
@@ -480,6 +455,7 @@ class JPGEncoder
 
     /* Pass 2: process columns. */
     dataOff = 0;
+    #pragma MUST_ITERATE(8,8,8)
     for (i=0; i<8; i++) {
       tmp0 = data[dataOff+ 0] + data[dataOff+56];
       tmp7 = data[dataOff+ 0] - data[dataOff+56];
@@ -526,6 +502,7 @@ class JPGEncoder
     }
 
     // Quantize/descale the coefficients
+    #pragma MUST_ITERATE(64,64,64)
     for (i=0; i<64; i++) {
       // Apply the quantization and scaling factor & Round to nearest integer
       data[i] = double2int(data[i]*fdtbl[i]); //round()
@@ -684,8 +661,9 @@ class JPGEncoder
 
     Arr64 DU_DCT = fDCTQuant(CDU, fdtbl);
     //ZigZag reorder
-    #pragma MUST_ITERATE(64, 64,64)
+
     #pragma UNROLL(2)
+    #pragma MUST_ITERATE(64, ,64)
     for (i=0;i<64;i++) {
       DU[ZigZag[i]]=DU_DCT[i];
     }
@@ -758,6 +736,7 @@ class JPGEncoder
     const uint16_t *UV = reinterpret_cast<const uint16_t*>(img + width*height*sizeof(uint8_t));
     
     int pos=0;
+    #pragma MUST_ITERATE(8, ,8)
     for (int y=0; y<8; y++) {
       const int y_shift = (ypos+y)*width;
       #pragma MUST_ITERATE(8, ,8)
@@ -789,7 +768,7 @@ class JPGEncoder
    * @playerversion Flash 9.0
    * @tiptext
    */
-  void init(int quality, uint8_t ifBnW)
+  void init(int quality, bool ifBnW)
   {
     ifBlackAndWhite = ifBnW;
 
@@ -844,27 +823,16 @@ class JPGEncoder
     bytenew=0;
     bytepos=8;
 
-    //if 'if' is here, than there's more code duplication but less checks comparing to
-    //checking it each cycle iteration
-    if (ifBlackAndWhite) {
-        for (int ypos=0; ypos<height; ypos+=8) {
-          for (int xpos=0; xpos<width; xpos+=8) {
-            //RGB2YUV(image, xpos, ypos, width);
-            getBlock(image, xpos, ypos, width, height);
-            DCY = processDU(YDU, fdtbl_Y, DCY, YDC_HT, YAC_HT);
-          }
-        }
-    }
-    else {
-        for (int ypos=0; ypos<height; ypos+=8) {
-          for (int xpos=0; xpos<width; xpos+=8) {
-            //RGB2YUV(image, xpos, ypos, width);
-            getBlock(image, xpos, ypos, width, height);
-            DCY = processDU(YDU, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+    for (int ypos=0; ypos<height; ypos+=8) {
+      for (int xpos=0; xpos<width; xpos+=8) {
+        //RGB2YUV(image, xpos, ypos, width);
+        getBlock(image, xpos, ypos, width, height);
+        DCY = processDU(YDU, fdtbl_Y, DCY, YDC_HT, YAC_HT);
+        if (!ifBlackAndWhite) {
             DCU = processDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
             DCV = processDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
-          }
         }
+      }
     }
 
     // Do the bit alignment of the EOI marker
