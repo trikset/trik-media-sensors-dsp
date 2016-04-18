@@ -100,11 +100,11 @@ struct array {
     std::copy(_data, _data + S, data);
   }
 
-  T& operator[](int i) {
+   T& restrict operator[](int i) restrict {
     return data[i];
   }
 
-  const T& operator[](int i) const {
+  const T& restrict operator[](int i) const restrict {
     return data[i];
   }
 };
@@ -215,8 +215,12 @@ static double _aasf[8] = {
 class JPGEncoder
 {
   private:
-  Arr64 YTable, UVTable;
+  //#pragma DATA_ALIGN (64);
+  Arr64 YTable;
+  Arr64 UVTable;
   Arr64d fdtbl_Y, fdtbl_UV;
+
+  bool ifBlackAndWhite;
 
   // Static table initialization
 
@@ -328,6 +332,7 @@ class JPGEncoder
         //bitcode[32767+nr] = {cat, nr};
       }
       //Negative numbers
+      //#pragma MUST_ITERATE(1, ,1)
       for (nr=-(nrupper-1); nr<=-nrlower; nr++) {
         category[32767+nr] = cat;
         /*
@@ -402,6 +407,7 @@ class JPGEncoder
     int i;
     /* Pass 1: process rows. */
     int dataOff=0;
+    #pragma MUST_ITERATE(8,8,8)
     for (i=0; i<8; i++) {
       tmp0 = data[dataOff+0] + data[dataOff+7];
       tmp7 = data[dataOff+0] - data[dataOff+7];
@@ -449,6 +455,7 @@ class JPGEncoder
 
     /* Pass 2: process columns. */
     dataOff = 0;
+    #pragma MUST_ITERATE(8,8,8)
     for (i=0; i<8; i++) {
       tmp0 = data[dataOff+ 0] + data[dataOff+56];
       tmp7 = data[dataOff+ 0] - data[dataOff+56];
@@ -495,6 +502,7 @@ class JPGEncoder
     }
 
     // Quantize/descale the coefficients
+    #pragma MUST_ITERATE(64,64,64)
     for (i=0; i<64; i++) {
       // Apply the quantization and scaling factor & Round to nearest integer
       data[i] = double2int(data[i]*fdtbl[i]); //round()
@@ -527,87 +535,112 @@ class JPGEncoder
   void writeSOF0(int width, int height)
   {
     writeWord(0xFFC0); // marker
-    writeWord(17);   // length, truecolor YUV JPG
+    if (ifBlackAndWhite) writeWord(11);
+        else writeWord(17);   // length, truecolor YUV JPG
+
     writeByte(8);    // precision
     writeWord(height);
     writeWord(width);
-    writeByte(3);    // nrofcomponents
+    if (ifBlackAndWhite) writeByte(1);
+        else writeByte(3);    // nrofcomponents
+
     writeByte(1);    // IdY
     writeByte(0x11); // HVY
     writeByte(0);    // QTY
-    writeByte(2);    // IdU
-    writeByte(0x11); // HVU
-    writeByte(1);    // QTU
-    writeByte(3);    // IdV
-    writeByte(0x11); // HVV
-    writeByte(1);    // QTV
+    if (!ifBlackAndWhite) {
+        writeByte(2);    // IdU
+        writeByte(0x11); // HVU
+        writeByte(1);    // QTU
+        writeByte(3);    // IdV
+        writeByte(0x11); // HVV
+        writeByte(1);    // QTV
+    }
   }
 
   void writeDQT()
   {
     writeWord(0xFFDB); // marker
-    writeWord(132);    // length
+    if (ifBlackAndWhite) writeWord(67);
+        else writeWord(132);    // length
     writeByte(0);
     int i;
     for (i=0; i<64; i++) {
       writeByte(YTable[i]);
     }
-    writeByte(1);
-    for (i=0; i<64; i++) {
-      writeByte(UVTable[i]);
+    if (!ifBlackAndWhite) {
+        writeByte(1);
+        for (i=0; i<64; i++) {
+          writeByte(UVTable[i]);
+        }
     }
   }
 
   void writeDHT()
   {
     writeWord(0xFFC4); // marker
-    writeWord(0x01A2); // length
+    if (ifBlackAndWhite) writeWord(0xD2);
+        else writeWord(0x01A2); // length
     int i;
 
     writeByte(0); // HTYDCinfo
+    #pragma MUST_ITERATE(32, 32, 32)
     for (i=0; i<16; i++) {
       writeByte(std_dc_luminance_nrcodes[i+1]);
     }
+    #pragma MUST_ITERATE(12, 12, 12)
     for (i=0; i<=11; i++) {
       writeByte(std_dc_luminance_values[i]);
     }
 
     writeByte(0x10); // HTYACinfo
+    #pragma MUST_ITERATE(16, 16, 16)
     for (i=0; i<16; i++) {
       writeByte(std_ac_luminance_nrcodes[i+1]);
     }
     for (i=0; i<=161; i++) {
       writeByte(std_ac_luminance_values[i]);
     }
+    if (!ifBlackAndWhite) {
+        writeByte(1); // HTUDCinfo
+        #pragma MUST_ITERATE(16, 16, 16)
+        for (i=0; i<16; i++) {
+          writeByte(std_dc_chrominance_nrcodes[i+1]);
+        }
+        #pragma MUST_ITERATE(12, 12, 12)
+        for (i=0; i<=11; i++) {
+          writeByte(std_dc_chrominance_values[i]);
+        }
 
-    writeByte(1); // HTUDCinfo
-    for (i=0; i<16; i++) {
-      writeByte(std_dc_chrominance_nrcodes[i+1]);
-    }
-    for (i=0; i<=11; i++) {
-      writeByte(std_dc_chrominance_values[i]);
-    }
-
-    writeByte(0x11); // HTUACinfo
-    for (i=0; i<16; i++) {
-      writeByte(std_ac_chrominance_nrcodes[i+1]);
-    }
-    for (i=0; i<=161; i++) {
-      writeByte(std_ac_chrominance_values[i]);
+        writeByte(0x11); // HTUACinfo
+        #pragma MUST_ITERATE(16, 16, 16)
+        for (i=0; i<16; i++) {
+          writeByte(std_ac_chrominance_nrcodes[i+1]);
+        }
+        for (i=0; i<=161; i++) {
+          writeByte(std_ac_chrominance_values[i]);
+        }
     }
   }
 
   void writeSOS()
   {
     writeWord(0xFFDA); // marker
-    writeWord(12); // length
-    writeByte(3); // nrofcomponents
+    if (ifBlackAndWhite) {
+        writeWord(8); // length
+        writeByte(1); // nrofcomponents
+    }
+    else {
+        writeWord(12); // length
+        writeByte(3); // nrofcomponents
+    }
     writeByte(1); // IdY
     writeByte(0); // HTY
-    writeByte(2); // IdU
-    writeByte(0x11); // HTU
-    writeByte(3); // IdV
-    writeByte(0x11); // HTV
+    if (!ifBlackAndWhite) {
+        writeByte(2); // IdU
+        writeByte(0x11); // HTU
+        writeByte(3); // IdV
+        writeByte(0x11); // HTV
+    }
     writeByte(0); // Ss
     writeByte(0x3f); // Se
     writeByte(0); // Bf
@@ -620,14 +653,17 @@ class JPGEncoder
   int processDU(Arr64 const& CDU, Arr64d const& fdtbl, int DC,
                 array<BitString, Size0> const& HTDC,
                 array<BitString, Size1> const& HTAC)
+  restrict
   {
     BitString EOB = HTAC[0x00];//.find(0x00)->second;
     BitString M16zeroes = HTAC[0xF0];//.find(0xF0)->second;
     int i;
 
     Arr64 DU_DCT = fDCTQuant(CDU, fdtbl);
-
     //ZigZag reorder
+
+    #pragma UNROLL(2)
+    #pragma MUST_ITERATE(64, ,64)
     for (i=0;i<64;i++) {
       DU[ZigZag[i]]=DU_DCT[i];
     }
@@ -700,6 +736,7 @@ class JPGEncoder
     const uint16_t *UV = reinterpret_cast<const uint16_t*>(img + width*height*sizeof(uint8_t));
     
     int pos=0;
+    #pragma MUST_ITERATE(8, ,8)
     for (int y=0; y<8; y++) {
       const int y_shift = (ypos+y)*width;
       #pragma MUST_ITERATE(8, ,8)
@@ -731,8 +768,10 @@ class JPGEncoder
    * @playerversion Flash 9.0
    * @tiptext
    */
-  void init(int quality)
+  void init(int quality, bool ifBnW)
   {
+    ifBlackAndWhite = ifBnW;
+
     if (quality <= 0) {
       quality = 1;
     }
@@ -783,13 +822,16 @@ class JPGEncoder
     int DCV=0;
     bytenew=0;
     bytepos=8;
+
     for (int ypos=0; ypos<height; ypos+=8) {
       for (int xpos=0; xpos<width; xpos+=8) {
         //RGB2YUV(image, xpos, ypos, width);
         getBlock(image, xpos, ypos, width, height);
         DCY = processDU(YDU, fdtbl_Y, DCY, YDC_HT, YAC_HT);
-        DCU = processDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
-        DCV = processDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
+        if (!ifBlackAndWhite) {
+            DCU = processDU(UDU, fdtbl_UV, DCU, UVDC_HT, UVAC_HT);
+            DCV = processDU(VDU, fdtbl_UV, DCV, UVDC_HT, UVAC_HT);
+        }
       }
     }
 
