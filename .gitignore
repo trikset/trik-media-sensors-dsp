@@ -1,3 +1,4 @@
+.*.swp
 .dlls
 .executables
 .interfaces
@@ -6,5 +7,8 @@
 package
 package.mak
 trik_dsp_*.tar
-ov7670/*/lib
-lib/release/*
+trik/*/*/lib
+trik/*/*/dsp_server/*dsp_server.tar
+trik/*/*/trik_*.tar
+#lib/release/*
+
