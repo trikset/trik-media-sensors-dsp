@@ -365,10 +365,11 @@ void clasterizeImage()
 
     }
 
-  uint32_t __attribute__((always_inline)) GetImgColor(int _rowStart,
-                                                      int _heightStep,
-                                                      int _colStart,
-                                                      int _widthStep)
+  uint32_t __attribute__((always_inline)) GetImgColor(int  _rowStart,
+                                                      int  _heightStep,
+                                                      int  _colStart,
+                                                      int  _widthStep,
+                                                      bool _isHSV)
   {
     uint32_t rgbResult = 0;
     const uint64_t* restrict img = s_rgb888hsv;
@@ -404,11 +405,18 @@ void clasterizeImage()
     int sat = cs_max * m_satScale;
     int val = cv_max * m_valScale;
 
-    return HSVtoRGB(hue, sat, val);
+
+    //if (!isHSV)
+        return HSVtoRGB(hue, sat, val);
+    //else
   }
   
 
-  uint32_t __attribute__((always_inline)) GetImgColor2(uint32_t _row, uint32_t _col, uint32_t _height, uint32_t _width)
+  uint32_t __attribute__((always_inline)) GetImgColor2(uint32_t _row,
+                                                       uint32_t _col,
+                                                       uint32_t _height,
+                                                       uint32_t _width,
+                                                       bool     _isHSV)
   {
     const uint32_t width = m_inImageDesc.m_width;
     const uint32_t gap   = width - _width;
@@ -448,7 +456,9 @@ void clasterizeImage()
     int sat = cs_max * m_satScale;
     int val = cv_max * m_valScale;
 
-    return HSVtoRGB(hue, sat, val);
+    //if (!isHSV)
+        return HSVtoRGB(hue, sat, val);
+    //else
   }
 
 
@@ -609,7 +619,7 @@ void clasterizeImage()
       for(int i = 0; i < m_heightM; ++i) {
         int colStart = 0;
         for(int j = 0; j < m_widthN; ++j) {
-          resColor = GetImgColor2(rowStart, colStart, m_heightStep, m_widthStep);
+          resColor = GetImgColor2(rowStart, colStart, m_heightStep, m_widthStep, _inArgs.isHSV);
           fillImage(rowStart, colStart, _outImage, resColor);
           _outArgs.outColor[counter++] = resColor;
           colStart += m_widthStep;
