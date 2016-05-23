@@ -369,7 +369,7 @@ void clasterizeImage()
                                                       int  _heightStep,
                                                       int  _colStart,
                                                       int  _widthStep,
-                                                      bool _isHSV)
+                                                      bool _isHSV = false)
   {
     uint32_t rgbResult = 0;
     const uint64_t* restrict img = s_rgb888hsv;
@@ -405,7 +405,10 @@ void clasterizeImage()
     int sat = cs_max * m_satScale;
     int val = cv_max * m_valScale;
 
+    if (_isHSV)
+    {
 
+    }
     //if (!isHSV)
         return HSVtoRGB(hue, sat, val);
     //else
@@ -455,6 +458,11 @@ void clasterizeImage()
     int hue = ch_max * m_hueScale;
     int sat = cs_max * m_satScale;
     int val = cv_max * m_valScale;
+
+    if (_isHSV)
+    {
+
+    }
 
     //if (!isHSV)
         return HSVtoRGB(hue, sat, val);
