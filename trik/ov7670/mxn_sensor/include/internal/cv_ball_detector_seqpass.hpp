@@ -369,7 +369,8 @@ void clasterizeImage()
                                                       int  _heightStep,
                                                       int  _colStart,
                                                       int  _widthStep,
-                                                      bool _isHSV = false)
+                                                      bool _isHSV,
+                                                      uint32_t* _colorHSV)
   {
     uint32_t rgbResult = 0;
     const uint64_t* restrict img = s_rgb888hsv;
@@ -407,7 +408,7 @@ void clasterizeImage()
 
     if (_isHSV)
     {
-
+        //_colorHSV = ((uint32_t)hue << 16) + ((uint32_t)sat << 8) + ((uint32_t)val);
     }
     //if (!isHSV)
         return HSVtoRGB(hue, sat, val);
@@ -459,13 +460,11 @@ void clasterizeImage()
     int sat = cs_max * m_satScale;
     int val = cv_max * m_valScale;
 
-    if (_isHSV)
-    {
+    return ((uint32_t)hue << 16) + ((uint32_t)sat << 8) + ((uint32_t)val);
 
-    }
 
     //if (!isHSV)
-        return HSVtoRGB(hue, sat, val);
+    //    return HSVtoRGB(hue, sat, val);
     //else
   }
 
@@ -493,6 +492,49 @@ void clasterizeImage()
       rV = _v;
       rS = _s;
     }
+  }
+
+  uint32_t HSVtoRGB(uint32_t hsv)
+  {
+      int H = (hsv >> 16) & 0xFF;
+      int S = (hsv >> 8) & 0xFF;
+      int V = hsv & 0xFF;
+
+      uint32_t rgbResult;
+
+      double r = 0;
+      double g = 0;
+      double b = 0;
+
+      double h = H / 255.0f;
+      double s = S / 255.0f;
+      double v = V / 255.0f;
+
+      //getTrueSV(v ,s, v ,s);
+      v = v < 0.2 ? 0 : v;
+      s = s < 0.2 ? 0 : 1;
+
+      int i = h*6;
+      double f = h*6-i;
+      double p = v * (1 - s);
+      double q = v * (1 - f * s);
+      double t = v * (1 - (1 - f) * s);
+
+      switch(i % 6) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
+      }
+
+      int ri = r*255;
+      int gi = g*255;
+      int bi = b*255;
+      rgbResult = ((int32_t)ri << 16) + ((int32_t)gi << 8) + ((int32_t)bi);
+
+      return rgbResult;
   }
 
   uint32_t HSVtoRGB(int H, int S, int V)
@@ -627,7 +669,9 @@ void clasterizeImage()
       for(int i = 0; i < m_heightM; ++i) {
         int colStart = 0;
         for(int j = 0; j < m_widthN; ++j) {
-          resColor = GetImgColor2(rowStart, colStart, m_heightStep, m_widthStep, _inArgs.isHSV);
+          resColor =  GetImgColor2(rowStart, colStart, m_heightStep, m_widthStep, _inArgs.isHSV);
+          _outArgs.colorHSV = resColor;
+          resColor = HSVtoRGB(resColor);
           fillImage(rowStart, colStart, _outImage, resColor);
           _outArgs.outColor[counter++] = resColor;
           colStart += m_widthStep;
