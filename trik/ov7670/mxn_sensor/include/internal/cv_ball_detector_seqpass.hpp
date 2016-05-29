@@ -670,9 +670,11 @@ void clasterizeImage()
         int colStart = 0;
         for(int j = 0; j < m_widthN; ++j) {
           resColor =  GetImgColor2(rowStart, colStart, m_heightStep, m_widthStep, _inArgs.isHSV);
-          if (_inArgs.isHSV)  _outArgs.colorHSV = resColor;
-          resColor = HSVtoRGB(resColor);
-          fillImage(rowStart, colStart, _outImage, resColor);
+          if (!_inArgs.isHSV)
+          {
+            resColor = HSVtoRGB(resColor);
+            fillImage(rowStart, colStart, _outImage, resColor);
+          }
           _outArgs.outColor[counter++] = resColor;
           colStart += m_widthStep;
         }

@@ -60,7 +60,6 @@ typedef struct TRIK_VIDTRANSCODE_CV_InArgs {
 
 typedef struct TRIK_VIDTRANSCODE_CV_OutArgsAlg {
     XDAS_Int32    outColor[100];
-    XDAS_Int32    colorHSV;
 } TRIK_VIDTRANSCODE_CV_OutArgsAlg;
 
 typedef struct TRIK_VIDTRANSCODE_CV_OutArgs {
