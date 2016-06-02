@@ -515,13 +515,13 @@ void clasterizeImage()
       v = v < 20 ? 0 : v;
       s = s < 20 ? 0 : 1;
 
-      int i = h * 600;
-      int f = h * 600 - i % pos;
+      int i = h * 60;
+      int f = h * 60 - i / pos;
       int p = v * (100 - s);
       int q = v * (100 - f * s);
       int t = v * (100 - (100 - f) * s);
 
-      switch(i % 600) {
+      switch(i % 60) {
         case 0: r = v; g = t; b = p; break;
         case 1: r = q; g = v; b = p; break;
         case 2: r = p; g = v; b = t; break;
