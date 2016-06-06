@@ -506,7 +506,6 @@ void clasterizeImage()
       int r = 0;
       int g = 0;
       int b = 0;
-
       int h = H / 255;
       int s = S / 255;
       int v = V / 255;
@@ -522,12 +521,12 @@ void clasterizeImage()
       int t = v * (100 - (100 - f) * s);
 
       switch(i % 60) {
-        case 0: r = v; g = t; b = p; break;
-        case 1: r = q; g = v; b = p; break;
-        case 2: r = p; g = v; b = t; break;
-        case 3: r = p; g = q; b = v; break;
-        case 4: r = t; g = p; b = v; break;
-        case 5: r = v; g = p; b = q; break;
+         case 0: r = v; g = t; b = p; break;
+         case 1: r = q; g = v; b = p; break;
+         case 2: r = p; g = v; b = t; break;
+         case 3: r = p; g = q; b = v; break;
+         case 4: r = t; g = p; b = v; break;
+         case 5: r = v; g = p; b = q; break;
       }
 
       int ri = r*255/pos;
@@ -671,11 +670,7 @@ void clasterizeImage()
         int colStart = 0;
         for(int j = 0; j < m_widthN; ++j) {
           resColor =  GetImgColor2(rowStart, colStart, m_heightStep, m_widthStep);
-          if (!_inArgs.isHSV)
-          {
-            resColor = HSVtoRGB(resColor);
-            fillImage(rowStart, colStart, _outImage, resColor);
-          }
+          fillImage(rowStart, colStart, _outImage, resColor);
           _outArgs.outColor[counter++] = resColor;
           colStart += m_widthStep;
         }
