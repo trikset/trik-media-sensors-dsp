@@ -453,7 +453,7 @@ void clasterizeImage()
       subImg += gap;  
     }
 
-    // return h, s and v as h_max, s_max and _max with values
+    // return h, s and v as h_max, s_max and v_max with values
     // scaled to be between 0 and 255.
     int hue = ch_max * m_hueScale;
     int sat = cs_max * m_satScale;
@@ -497,41 +497,42 @@ void clasterizeImage()
   {
       const int pos = 100;
 
-      int H = ((hsv >> 16) & 0xFF) * pos;
-      int S = ((hsv >> 8) & 0xFF) * pos;
-      int V = (hsv & 0xFF) * pos;
+      int H = ((hsv >> 16) & 0xFF);
+      int S = ((hsv >> 8) & 0xFF);
+      int V = (hsv & 0xFF);
 
       uint32_t rgbResult;
 
-      int r = 0;
-      int g = 0;
-      int b = 0;
-      int h = H / 255;
-      int s = S / 255;
-      int v = V / 255;
+      float r = 0;
+      float g = 0;
+      float b = 0;
+
+      float h = H / 255.0f;
+      float s = S / 255.0f;
+      float v = V / 255.0f;
 
       //getTrueSV(v ,s, v ,s);
-      v = v < 20 ? 0 : v;
-      s = s < 20 ? 0 : 1;
+      v = v < 0.2 ? 0 : v;
+      s = s < 0.2 ? 0 : 1;
 
-      int i = h * 60;
-      int f = h * 60 - i / pos;
-      int p = v * (100 - s);
-      int q = v * (100 - f * s);
-      int t = v * (100 - (100 - f) * s);
+      int i = h*6;
+      float f = h*6-i;
+      float p = v * (1 - s);
+      float q = v * (1 - f * s);
+      double t = v * (1 - (1 - f) * s);
 
-      switch(i % 60) {
-         case 0: r = v; g = t; b = p; break;
-         case 1: r = q; g = v; b = p; break;
-         case 2: r = p; g = v; b = t; break;
-         case 3: r = p; g = q; b = v; break;
-         case 4: r = t; g = p; b = v; break;
-         case 5: r = v; g = p; b = q; break;
+      switch(i % 6) {
+        case 0: r = v; g = t; b = p; break;
+        case 1: r = q; g = v; b = p; break;
+        case 2: r = p; g = v; b = t; break;
+        case 3: r = p; g = q; b = v; break;
+        case 4: r = t; g = p; b = v; break;
+        case 5: r = v; g = p; b = q; break;
       }
 
-      int ri = r*255/pos;
-      int gi = g*255/pos;
-      int bi = b*255/pos;
+      int ri = r*255;
+      int gi = g*255;
+      int bi = b*255;
       rgbResult = ((int32_t)ri << 16) + ((int32_t)gi << 8) + ((int32_t)bi);
 
       return rgbResult;
@@ -669,10 +670,11 @@ void clasterizeImage()
       for(int i = 0; i < m_heightM; ++i) {
         int colStart = 0;
         for(int j = 0; j < m_widthN; ++j) {
-          resColor =  GetImgColor2(rowStart, colStart, m_heightStep, m_widthStep);
-          fillImage(rowStart, colStart, _outImage, resColor);
-          _outArgs.outColor[counter++] = resColor;
-          colStart += m_widthStep;
+            resColor =  GetImgColor2(rowStart, colStart, m_heightStep, m_widthStep);
+            _outArgs.outColor[counter++] = resColor;
+            resColor = HSVtoRGB(resColor);
+            fillImage(rowStart, colStart, _outImage, resColor);
+            colStart += m_widthStep;
         }
         rowStart += m_heightStep;
       }
