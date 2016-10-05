@@ -49,6 +49,7 @@ typedef struct TRIK_VIDTRANSCODE_CV_DynamicParams {
 typedef struct TRIK_VIDTRANSCODE_CV_InArgsAlg {
     XDAS_Int32    widthM;
     XDAS_Int32    heightN;
+    XDAS_Bool     isHSV;
 } TRIK_VIDTRANSCODE_CV_InArgsAlg;
 
 typedef struct TRIK_VIDTRANSCODE_CV_InArgs {
