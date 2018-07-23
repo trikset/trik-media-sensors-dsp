@@ -1,16 +1,16 @@
-
+include ../makefile
 # your various installation directories
 DEPOT_DSP?=/opt/trik-dsp
 #CODEC_DIR?=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))/../../../../
 
 XDC_INSTALL_DIR?=$(DEPOT_DSP)/xdctools_3_24_07_73
 CE_INSTALL_DIR?=$(DEPOT_DSP)/codec_engine_3_23_00_07
-BIOS_INSTALL_DIR?=$(DEPOT_DSP)/bios_6_35_01_29
-FC_INSTALL_DIR?=$(DEPOT_DSP)/framework_components_3_23_03_17
+BIOS_INSTALL_DIR?=$(DEPOT_DSP)/bios_6_37_05_35
+FC_INSTALL_DIR?=$(DEPOT_DSP)/framework_components_3_24_02_15
 XDAIS_INSTALL_DIR?=$(DEPOT_DSP)/xdais_7_23_00_06
-IPC_INSTALL_DIR?=$(DEPOT_DSP)/ipc_1_25_02_12
-LINK_INSTALL_DIR?=$(DEPOT_DSP)/syslink_2_21_01_05
-OSAL_INSTALL_DIR?=$(DEPOT_DSP)/osal_1_23_00_04
+IPC_INSTALL_DIR?=$(DEPOT_DSP)/ipc_1_25_03_15
+LINK_INSTALL_DIR?=$(DEPOT_DSP)/syslink_2_21_03_11
+OSAL_INSTALL_DIR?=$(DEPOT_DSP)/osal_1_24_00_09
 CMEM_INSTALL_DIR?=$(DEPOT_DSP)/linuxutils_3_23_00_01
 DSPLIB_INSTALL_DIR?=$(DEPOT_DSP)/dsplib_3_1_1_1
 #IMGLIB_INSTALL_DIR?=$(DEPOT_DSP)/imglib_2_02_00_00
@@ -25,7 +25,7 @@ XDCOPTIONS=v
 
 XDCARGS?=CGTOOLS_C674=\"$(CGTOOLS_C674)\"
 
-XDCPATH?=^/..;$(CE_INSTALL_DIR)/packages;$(XDAIS_INSTALL_DIR)/packages;$(BIOS_INSTALL_DIR)/packages;$(LINK_INSTALL_DIR)/packages;$(IPC_INSTALL_DIR)/packages;$(FC_INSTALL_DIR)/packages;$(OSAL_INSTALL_DIR)/packages;$(CMEM_INSTALL_DIR)/packages;$(DSPLIB_INSTALL_DIR)/packages;$(VLIB_INSTALL_DIR)/packages;$(IMGLIB_INSTALL_DIR)
+XDCPATH=^/..;$(CE_INSTALL_DIR)/packages;$(XDAIS_INSTALL_DIR)/packages;$(BIOS_INSTALL_DIR)/packages;$(LINK_INSTALL_DIR)/packages;$(IPC_INSTALL_DIR)/packages;$(FC_INSTALL_DIR)/packages;$(OSAL_INSTALL_DIR)/packages;$(CMEM_INSTALL_DIR)/packages;$(DSPLIB_INSTALL_DIR)/packages;$(VLIB_INSTALL_DIR)/packages;$(IMGLIB_INSTALL_DIR)
 
 XDC?=$(XDC_INSTALL_DIR)/xdc
 
